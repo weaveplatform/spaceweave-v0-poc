@@ -56,7 +56,7 @@ require (
 	github.com/standard-webhooks/standard-webhooks/libraries v1.3.0 // indirect
 	github.com/tidwall/gjson v1.20.6 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
-	github.com/tidwall/pretty v1.3.0 // indirect
+	github.com/tidwall/pretty v1.3.1 // indirect
 	github.com/tidwall/sjson v1.2.11 // indirect
 	github.com/vladopajic/go-test-coverage/v2 v2.23.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
