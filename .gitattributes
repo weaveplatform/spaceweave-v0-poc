@@ -5,3 +5,8 @@
 * text=auto
 
 *.json text eol=lf
+
+# Generation and bundle golden tests compare bytes. Windows checkouts must
+# preserve the LF written by the YAML bundler and Go code generator.
+*.yaml text eol=lf
+*.go text eol=lf
