@@ -3,15 +3,17 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { connect } from './browser.mjs';
+import { productApi, listFloorplans } from './product-api.mjs';
 
 const [site, output] = process.argv.slice(2);
 if (!site || !output) throw Error('usage: workspace-trial.mjs <site-url> <output.json>');
 const base = new URL(site), debug = `http://127.0.0.1:${process.env.SPACEWEAVE_CHROME_DEBUG_PORT || 9267}`;
-const catalogue = await (await fetch(new URL('generated/catalog.json', base))).json();
+const api = productApi(base);
+const catalogue = { plans: await listFloorplans(api) };
 const plans = catalogue.plans.filter(p => ['draft', 'approved'].includes(p.status));
 assert.ok(plans.length, 'need a review floor');
-const info = await (await fetch(new URL('api/info', base))).json();
-const generic = await (await fetch(new URL('api/profiles/generic', base))).json();
+const info = await api.info();
+const generic = await api.profile('generic');
 const version = await (await fetch(`${debug}/json/version`)).json();
 const browser = await connect(version.webSocketDebuggerUrl);
 let page, targetId;
@@ -66,13 +68,13 @@ try {
   page.on('Fetch.requestPaused', async ({ requestId, request }) => {
     const url = new URL(request.url), path = url.pathname, method = request.method;
     const reply = async (body, responseCode = 200) => page.call('Fetch.fulfillRequest', {
-      requestId, responseCode, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
+      requestId, responseCode, responseHeaders: [{ name: 'Content-Type', value: responseCode >= 400 ? 'application/problem+json' : 'application/json' }],
       body: Buffer.from(JSON.stringify(body)).toString('base64'),
     });
-    if (path.endsWith('/generated/catalog.json')) return reply({ ...testCatalogue, plans: imported ? [...testCatalogue.plans, { id: 'trial-import', title: 'Trial import', status: 'queued', format: 'png' }] : testCatalogue.plans });
-    if (path.endsWith('/api/info')) return reply({ ...info, tracer });
+    if (path === '/api/v1/floorplans' && method === 'GET') return reply({ ...testCatalogue, plans: imported ? [...testCatalogue.plans, { id: 'trial-import', title: 'Trial import', status: 'queued', format: 'png' }] : testCatalogue.plans });
+    if (path.endsWith('/api/v1/info')) return reply({ ...info, tracer });
     if (method === 'GET') {
-      if (path.includes('/api/profiles/')) {
+      if (path.includes('/api/v1/layer-profiles/')) {
         const name = decodeURIComponent(path.split('/').at(-1));
         return reply({ ...generic, name, profile: profiles.get(name) ?? { rules: [] } });
       }
@@ -80,18 +82,18 @@ try {
     }
     // Every non-GET API request ends here, including unexpected mutations.
     writes.push({ path, method, body: request.postData });
-    if (method === 'PUT' && path.includes('/api/profiles/')) {
-      if (failSave) return reply({ error: 'Trial save failure' }, 503);
+    if (method === 'PUT' && path.includes('/api/v1/layer-profiles/')) {
+      if (failSave) return reply({ type: 'about:blank', title: 'Service unavailable', status: 503, detail: 'Trial save failure' }, 503);
       profiles.set(decodeURIComponent(path.split('/').at(-1)), JSON.parse(request.postData));
-    } else if (path.endsWith('/api/plans')) imported = true;
+    } else if (path.endsWith('/api/v1/floorplans')) imported = true;
     else if (path.endsWith('/retrace')) {
-      if (failQueue) return reply({ error: 'Trial queue failure' }, 503);
+      if (failQueue) return reply({ type: 'about:blank', title: 'Service unavailable', status: 503, detail: 'Trial queue failure' }, 503);
       const floor = testCatalogue.plans.find(p => p.id === decodeURIComponent(path.split('/').at(-2)));
       if (floor) { floor.status = 'queued'; floor.updatedAt = new Date().toISOString(); }
     }
     return reply({ plan: { id: 'trial-import', status: 'queued' }, duplicate: false });
   });
-  await page.call('Fetch.enable', { patterns: [{ urlPattern: `${base.origin}/*api/*` }, { urlPattern: `${base.origin}/*generated/catalog.json` }] });
+  await page.call('Fetch.enable', { patterns: [{ urlPattern: `${base.origin}/api/v1/*` }] });
   await page.call('Page.enable'); await page.call('Runtime.enable');
   await page.call('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   const url = new URL(base); url.searchParams.set('plan', plans[Math.min(1, plans.length - 1)].id); url.searchParams.set('skin', 'model');
@@ -202,7 +204,7 @@ try {
   assert.ok(await evaluate('document.querySelector("#import-dialog").open'));
   await evaluate(`(()=>{const d=new DataTransfer();d.items.add(new File([new Uint8Array([137,80,78,71,13,10,26,10])],'trial.png',{type:'image/png'}));const n=document.querySelector('#upload-file');n.files=d.files;n.dispatchEvent(new Event('change'))})()`);
   await waitFor('document.body.dataset.workspace==="review"&&!document.querySelector("#import-dialog").open&&document.querySelector("#pipeline").textContent.includes("Trial import")');
-  assert.equal(writes.filter(r => r.path.endsWith('/api/plans')).length, 1);
+  assert.equal(writes.filter(r => r.path.endsWith('/api/v1/floorplans')).length, 1);
 
   tracer = 'auto';
   await page.call('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });

@@ -1,0 +1,1312 @@
+paths:
+  /floorplans:
+    get:
+      description: Lists floorplans in stable ID order. nextCursor is opaque; this is not a snapshot across requests.
+      operationId: listFloorplans
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            default: 50
+            maximum: 200
+            minimum: 1
+            type: integer
+        - in: query
+          name: cursor
+          schema:
+            maxLength: 1024
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FloorplanPage'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+    post:
+      description: Queues a supported drawing or image for local processing. Content duplicates return the existing plan with 200. A queued plan is not approved. This operation does not implement Idempotency-Key receipts; callers reconcile uploads by returned plan or content hash before repeating an uncertain request.
+      operationId: uploadFloorplan
+      parameters:
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              additionalProperties: false
+              properties:
+                image:
+                  format: binary
+                  type: string
+              required:
+                - image
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadReply'
+          description: Identical content already exists
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}:
+    get:
+      operationId: getFloorplan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floorplan'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/approve:
+    post:
+      operationId: approveFloorplan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/artifacts/{artifact}:
+    get:
+      operationId: getFloorplanArtifact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - in: path
+          name: artifact
+          required: true
+          schema:
+            enum:
+              - model
+              - trace
+              - report
+              - source
+              - overlay
+              - drawing
+              - original
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+            image/jpeg:
+              schema:
+                format: binary
+                type: string
+            image/png:
+              schema:
+                format: binary
+                type: string
+            image/svg+xml:
+              schema:
+                format: binary
+                type: string
+            image/webp:
+              schema:
+                format: binary
+                type: string
+          description: Artifact bytes. Content-Type identifies the stored format. Model JSON contains versioned source links.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/files:
+    post:
+      operationId: attachFloorplanFile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              additionalProperties: false
+              properties:
+                file:
+                  format: binary
+                  type: string
+                role:
+                  enum:
+                    - spaces
+                    - reference
+                  type: string
+              required:
+                - file
+                - role
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadReply'
+          description: Attachment already exists
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/files/{sha}:
+    delete:
+      operationId: detachFloorplanFile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - in: path
+          name: sha
+          required: true
+          schema:
+            pattern: ^[a-f0-9]{64}$
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+    get:
+      operationId: downloadFloorplanFile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - in: path
+          name: sha
+          required: true
+          schema:
+            pattern: ^[a-f0-9]{64}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+            image/jpeg:
+              schema:
+                format: binary
+                type: string
+            image/png:
+              schema:
+                format: binary
+                type: string
+            image/svg+xml:
+              schema:
+                format: binary
+                type: string
+            image/webp:
+              schema:
+                format: binary
+                type: string
+          description: Artifact bytes. Content-Type identifies the stored format. Model JSON contains versioned source links.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/processing:
+    get:
+      description: Current processing attempt of this floorplan. Retracing advances attempt and changes this view; this is not a permanent operation-history reference. Draft/approved means tracing finished; failed means processing failed.
+      operationId: getFloorplanProcessing
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Processing'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/reject:
+    post:
+      operationId: rejectFloorplan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/retrace:
+    post:
+      operationId: retraceFloorplan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /floorplans/{id}/retry:
+    post:
+      operationId: retryFloorplan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            maxLength: 255
+            minLength: 1
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /info:
+    get:
+      operationId: getInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Info'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+  /layer-profiles/{name}:
+    get:
+      operationId: getLayerProfile
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            pattern: ^[a-z0-9][a-z0-9_-]{0,63}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable
+    put:
+      operationId: putLayerProfile
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            pattern: ^[a-z0-9][a-z0-9_-]{0,63}$
+            type: string
+        - $ref: '#/components/parameters/LocalMutationGuard'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayerProfile'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileReply'
+          description: Success
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invalid request
+        "401":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Authentication required
+        "403":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Action forbidden
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Resource not found
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: State conflict
+        "413":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Request too large
+        "415":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unsupported media type
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Input cannot be processed
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Internal error
+        "503":
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Temporarily unavailable

@@ -34,9 +34,10 @@ import (
 )
 
 var (
-	binary   string
-	repoRoot string
-	coverDir string
+	binary        string
+	controlBinary string
+	repoRoot      string
+	coverDir      string
 )
 
 func TestMain(m *testing.M) {
@@ -82,6 +83,26 @@ func run(m *testing.M) int {
 	build.Env = append(os.Environ(), "GOWORK=off")
 	if out, err := build.CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "build: %v\n%s", err, out)
+		return 1
+	}
+	controlBinary = filepath.Join(tmp, "spaceweavectl")
+	if runtime.GOOS == "windows" {
+		controlBinary += ".exe"
+	}
+	buildControl := exec.Command(
+		"go",
+		"build",
+		"-cover",
+		"-covermode=atomic",
+		"-coverpkg=github.com/weaveplatform/spaceweave/...",
+		"-o",
+		controlBinary,
+		"./cmd/spaceweavectl",
+	)
+	buildControl.Dir = repoRoot
+	buildControl.Env = append(os.Environ(), "GOWORK=off")
+	if out, err := buildControl.CombinedOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "build control client: %v\n%s", err, out)
 		return 1
 	}
 	return m.Run()
@@ -164,7 +185,13 @@ func newSiteWith(t *testing.T, tracer string) *site {
 	if err := os.WriteFile(filepath.Join(dir, "spaceweave.yaml"), []byte(cfg), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	s.env = append(os.Environ(), "GOCOVERDIR="+coverDir)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, "SPACEWEAVE_API_TOKEN=") &&
+			!strings.HasPrefix(entry, "SPACEWEAVE_OPERATOR_TOKEN=") {
+			s.env = append(s.env, entry)
+		}
+	}
+	s.env = append(s.env, "GOCOVERDIR="+coverDir)
 	return s
 }
 

@@ -29,7 +29,9 @@ var modules = map[string]bool{
 
 func knownRoot(root string) bool {
 	return modules[root] || root == "app" || root == "platform" || root == "gateway" || root == "kernel" ||
-		root == "layout"
+		root == "layout" || root == "transport" ||
+		root == "devtools" ||
+		root == "ctl"
 }
 
 func rootOf(path string) string {
@@ -57,7 +59,8 @@ func importViolation(source, imported string) string {
 		return "kernel must use only the standard library"
 	}
 	if modules[owner] && within(source, owner+"/api") {
-		if (internal && !within(dependency, "kernel")) || (!internal && strings.Contains(rootOf(imported), ".")) {
+		if (internal && !within(dependency, "kernel")) ||
+			(!internal && strings.Contains(rootOf(imported), ".")) {
 			return "module api may import only the standard library and kernel"
 		}
 	}
@@ -75,6 +78,12 @@ func importViolation(source, imported string) string {
 	}
 	target := rootOf(dependency)
 	switch {
+	case owner == "ctl" && !within(dependency, "platform/buildinfo"):
+		return "remote CLI must use public clients instead of internal server code"
+	case owner == "transport" && target != "transport":
+		return "generated transport must not import application implementation"
+	case owner == "devtools" && target != "devtools":
+		return "developer tooling must not import runtime modules"
 	case owner == "app":
 		return ""
 	case owner == "platform" && target != "platform" && target != "kernel":
@@ -90,7 +99,8 @@ func importViolation(source, imported string) string {
 		if target != owner && modules[target] && !within(dependency, target+"/api") {
 			return "cross-module imports must use the target api"
 		}
-		if within(source, owner+"/processing") && within(dependency, owner+"/adapters") {
+		if within(source, owner+"/processing") &&
+			(within(dependency, owner+"/adapters") || target == "transport") {
 			return "processing must not import adapters"
 		}
 	}
@@ -110,6 +120,18 @@ func productionViolation(source, imported string) string {
 	}
 	if within(source, "pkg") {
 		return "published packages must not import internal implementation"
+	}
+	if within(source, "tools") && !within(dependency, "devtools") {
+		return "generation commands must delegate to developer tooling"
+	}
+	if within(source, "internal/ctl") && !(within(dependency, "platform/buildinfo") || !internal) {
+		return "remote CLI must use the public SDK"
+	}
+	if within(source, "cmd/spaceweavectl") {
+		if !within(dependency, "ctl") {
+			return "control entrypoint must delegate to remote CLI"
+		}
+		return ""
 	}
 	if within(source, "cmd") && !within(dependency, "app") {
 		return "entrypoints must delegate to application assembly"

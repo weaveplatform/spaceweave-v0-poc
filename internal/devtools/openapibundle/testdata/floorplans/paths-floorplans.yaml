@@ -1,0 +1,38 @@
+paths:
+  /floorplans:
+    get:
+      operationId: listFloorplans
+      tags: [floorplans]
+      responses:
+        "200":
+          description: Every floorplan.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Floorplan'
+  /floorplans/{floorplanId}:
+    get:
+      operationId: getFloorplan
+      tags: [floorplans]
+      parameters:
+        - name: floorplanId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: The floorplan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Floorplan'
+        "404":
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    Floorplan:
+      type: object
+      properties:
+        id: {type: string}

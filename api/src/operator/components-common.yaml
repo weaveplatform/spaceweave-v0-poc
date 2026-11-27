@@ -1,0 +1,59 @@
+components:
+  schemas:
+    Problem:
+      properties:
+        detail:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+      required:
+        - type
+        - title
+        - status
+      type: object
+    Runtime:
+      properties:
+        queue:
+          properties:
+            approved:
+              type: integer
+            converting:
+              type: integer
+            draft:
+              type: integer
+            failed:
+              type: integer
+            queued:
+              type: integer
+            tracing:
+              type: integer
+          required:
+            - queued
+            - converting
+            - tracing
+            - draft
+            - approved
+            - failed
+          type: object
+        tracer:
+          type: string
+        version:
+          type: string
+        workers:
+          type: integer
+      required:
+        - version
+        - tracer
+        - workers
+        - queue
+      type: object
+  securitySchemes:
+    bearerAuth:
+      scheme: bearer
+      type: http

@@ -10,3 +10,8 @@ exclude:
   paths:
     # Binary entry points: thin shims over internal/.
     - ^cmd/
+    # Generated transport is checked by contract/generation and HTTP acceptance tests.
+    - ^internal/transport/gen/
+    - ^pkg/client/
+    # Thin generator executable entrypoints; their logic lives in tested devtools.
+    - ^tools/

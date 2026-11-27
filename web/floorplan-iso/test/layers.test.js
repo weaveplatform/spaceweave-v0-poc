@@ -84,12 +84,12 @@ test('the API reads profiles, and saves them with the request header', async () 
     return { ok: true, status: 200, json: async () => ({ name: 'acme', profile: { rules: [] }, roles: [] }) };
   });
   await api.profile('acme');
-  assert.equal(calls[0].url, 'api/profiles/acme');
+  assert.equal(calls[0].url, '/api/v1/layer-profiles/acme');
   assert.equal(calls[0].init.headers, undefined, 'a GET needs no header');
   await api.saveProfile('acme', { rules: [{ role: 'wall', layer: 'X' }] });
   assert.equal(calls[1].init.method, 'PUT');
   assert.equal(calls[1].init.headers[REQUEST_HEADER], '1', 'a PUT changes something, so it carries the header');
   assert.deepEqual(JSON.parse(calls[1].init.body), { rules: [{ role: 'wall', layer: 'X' }] });
   await api.review('p', 'retrace');
-  assert.equal(calls[2].url, 'api/plans/p/retrace');
+  assert.equal(calls[2].url, '/api/v1/floorplans/p/retrace');
 });

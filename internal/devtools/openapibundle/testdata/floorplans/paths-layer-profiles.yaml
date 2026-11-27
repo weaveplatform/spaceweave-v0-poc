@@ -1,0 +1,7 @@
+paths:
+  /layer-profiles:
+    get:
+      operationId: listLayerProfiles
+      responses:
+        "200":
+          description: Layer profiles.

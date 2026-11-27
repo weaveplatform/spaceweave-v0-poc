@@ -1,3 +1,5 @@
+import { fileUrl } from './api.js';
+
 // What the "Add a plan" list says about each generated plan: where it is in
 // upload → queue → (convert) → trace → review, and what can be done about
 // it. Pure, so node can test it.
@@ -122,7 +124,7 @@ export function packageRows(entry) {
     name: f.name,
     role: f.role,
     label: ROLES[f.role] ?? f.role,
-    href: `${entry.dir ?? ''}${f.upload}`,
+    href: entry.fileUrl?.(f.sha256) ?? fileUrl(entry.id, f.sha256),
   }));
 }
 

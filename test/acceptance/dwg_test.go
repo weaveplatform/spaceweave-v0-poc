@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ type serving struct {
 	s    *site
 	base string
 	log  *lockedBuffer
+	stop func()
 }
 
 func serve(t *testing.T, s *site) *serving {
@@ -49,7 +51,7 @@ func serve(t *testing.T, s *site) *serving {
 	}
 	exited := make(chan error, 1)
 	go func() { exited <- cmd.Wait() }()
-	t.Cleanup(func() {
+	stop := sync.OnceFunc(func() {
 		_ = cmd.Process.Signal(os.Interrupt)
 		select {
 		case <-exited:
@@ -59,9 +61,15 @@ func serve(t *testing.T, s *site) *serving {
 			t.Error("serve didn't stop on interrupt")
 		}
 	})
+	t.Cleanup(stop)
 	for deadline := time.Now().Add(15 * time.Second); ; {
 		if _, rest, ok := strings.Cut(log.String(), "msg=serving url="); ok {
-			return &serving{s: s, base: strings.TrimSuffix(strings.Fields(rest)[0], "/"), log: log}
+			return &serving{
+				s:    s,
+				base: strings.TrimSuffix(strings.Fields(rest)[0], "/"),
+				log:  log,
+				stop: stop,
+			}
 		}
 		if time.Now().After(deadline) {
 			t.Fatalf("serve didn't start:\n%s", log)

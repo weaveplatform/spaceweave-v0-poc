@@ -23,7 +23,7 @@ New plans don't need tracing by hand: drop an image on the page (or into a
 folder) and the `spaceweave` worker traces it and adds it to the floor selector
 for review. See [Adding plans automatically](#adding-plans-automatically).
 
-This is a static site with no build step and no npm dependencies. D3 7.9.0 loads
+The frontend has no build step and no npm dependencies. D3 7.9.0 loads
 from jsDelivr, pinned with a subresource-integrity hash.
 
 ## Run it
@@ -36,7 +36,7 @@ node --test 'test/*.test.js'     # projection, geometry, every plan's invariants
 
 ## Adding plans automatically
 
-`spaceweave serve` serves this site with a small API added, and runs the
+`spaceweave serve` serves this site with the versioned product API and runs the
 tracer alongside it:
 
 ```sh
@@ -72,8 +72,24 @@ requests that don't come from the page itself, because any page open in the
 browser can reach a local server. To reach it from another machine, listen on that interface and name
 it: `--addr 0.0.0.0:8000 --allow-host my-laptop.local`.
 
-Under `tools/serve.py`, viewing and source comparison work without the API;
-import, approval and configuration actions are unavailable.
+The browser uses `/api/v1` for imported floors, models, reports, attachments and
+evidence. Listing follows all pages; a model's source URL points to its versioned
+artifact. `/operator/v1/runtime` is a separate installation-only surface and is
+not used for floorplan approval or review.
+
+Under `tools/serve.py`, examples, watched generated floors and source comparison
+remain viewable, while import, approval and profile writes are unavailable.
+Static-file mode is entered only when `/api/v1/info` is absent with a bare/HTML
+404. Problem responses, permission refusals, network failures and server errors
+do not trigger generated-file fallback.
+
+The local browser uses tokenless product mode. An optional server
+`SPACEWEAVE_API_TOKEN` protects product routes and generated files; the browser
+has no token login UI. Operator requests always require the independent
+`SPACEWEAVE_OPERATOR_TOKEN`. Credentials are environment-only and are not staff
+SSO. Remote consumers use the [SDK or REST CLI](../../docs/rest-apis.md), rather
+than reading the output directory. The Docker image includes Node 22 for the
+shared plan validator.
 
 ### Drawings
 

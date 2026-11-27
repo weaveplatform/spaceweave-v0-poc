@@ -18,13 +18,13 @@ test('a floor package lists the files beside the drawing, each with its role and
     ],
   };
   assert.deepEqual(packageRows(entry), [
-    { sha: 'b', name: 'Floor 02 space.dwg', role: 'spaces', label: 'Space plan', href: 'generated/f-1/files/spaces-bbbbbb.dwg' },
-    { sha: 'c', name: 'print.png', role: 'reference', label: 'Reference', href: 'generated/f-1/files/reference-cccccc.png' },
-    { sha: 'd', name: 'x.png', role: 'later', label: 'later', href: 'generated/f-1/files/later-d.png' },
+    { sha: 'b', name: 'Floor 02 space.dwg', role: 'spaces', label: 'Space plan', href: '/api/v1/floorplans/f-1/files/b' },
+    { sha: 'c', name: 'print.png', role: 'reference', label: 'Reference', href: '/api/v1/floorplans/f-1/files/c' },
+    { sha: 'd', name: 'x.png', role: 'later', label: 'later', href: '/api/v1/floorplans/f-1/files/d' },
   ]);
   assert.deepEqual(packageRows({}), [], 'a plan from before packages has nothing beside its drawing');
   assert.deepEqual(packageRows(undefined), []);
-  assert.equal(packageRows({ files: [{ role: 'spaces', upload: 'files/s.dwg' }] })[0].href, 'files/s.dwg');
+  assert.equal(packageRows({ id: 'floor / two', files: [{ role: 'spaces', sha256: 'sha / two', upload: 'files/s.dwg' }] })[0].href, '/api/v1/floorplans/floor%20%2F%20two/files/sha%20%2F%20two');
   assert.equal(ROLES.architecture, 'Drawing');
 });
 
@@ -72,7 +72,7 @@ test('the API client attaches and detaches package files with the request header
   const api = createApi(impl);
   const file = new File([new Uint8Array([65, 67])], 'Floor 02 space.dwg');
   assert.deepEqual(await api.attach('a b', file, 'spaces'), { plan: { id: 'a b' }, duplicate: false });
-  assert.equal(calls[0].url, 'api/plans/a%20b/files');
+  assert.equal(calls[0].url, '/api/v1/floorplans/a%20b/files');
   assert.equal(calls[0].init.method, 'POST');
   assert.equal(calls[0].init.headers[REQUEST_HEADER], '1');
   assert.equal(calls[0].init.body.get('role'), 'spaces');
@@ -80,7 +80,7 @@ test('the API client attaches and detaches package files with the request header
   await api.attach('a b', file, 'reference', 'renamed.dwg');
   assert.equal(calls[1].init.body.get('file').name, 'renamed.dwg');
   await api.detach('a b', 'ab/c');
-  assert.equal(calls[2].url, 'api/plans/a%20b/files/ab%2Fc');
+  assert.equal(calls[2].url, '/api/v1/floorplans/a%20b/files/ab%2Fc');
   assert.equal(calls[2].init.method, 'DELETE');
   assert.equal(calls[2].init.headers[REQUEST_HEADER], '1');
 });

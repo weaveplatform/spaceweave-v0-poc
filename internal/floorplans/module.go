@@ -248,3 +248,6 @@ func (d *Module) Trace(ctx context.Context, path string) (api.Entry, bool, error
 	e, err = d.store.Get(e.ID)
 	return e, true, err //nolint:wrapcheck // catalogue errors name their source
 }
+
+// Assets exposes read-only artifact and attachment access through the owning module.
+func (d *Module) Assets() api.Assets { return d.store }
