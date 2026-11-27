@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks a plan.json against test/invariants.mjs and prints {"ok", "errors"} on
-// stdout. The Go tracer (internal/plan) runs this on every submission. Exit
+// stdout. The Go tracer (internal/floorplans/processing/plan) runs this on every submission. Exit
 // status is 0 whenever a verdict was printed, valid or not; anything else is a
 // usage or I/O failure.
 import { readFile } from 'node:fs/promises';

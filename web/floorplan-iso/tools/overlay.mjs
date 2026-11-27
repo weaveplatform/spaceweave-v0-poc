@@ -3,7 +3,7 @@
 // visible at a glance: walls (red exterior, blue interior, cyan glass), door and
 // window openings (green), room outlines with names (purple), zones (pink,
 // finely dashed: open-plan areas with no walls), voids (grey) and furniture
-// footprints (orange). internal/plan/overlay.go uses the same colours. Output is SVG in source-image pixels; rasterise it to
+// footprints (orange). internal/floorplans/processing/plan/overlay.go uses the same colours. Output is SVG in source-image pixels; rasterise it to
 // look at it, e.g.
 //
 //   node tools/overlay.mjs js/plans/pt-clinic.js ~/plans/clinic.png /tmp/clinic.svg

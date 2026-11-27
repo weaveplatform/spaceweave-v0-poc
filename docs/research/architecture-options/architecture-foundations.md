@@ -1,10 +1,10 @@
 # Architecture foundations for SpaceWeave
 
 Research date: 19 November 2026. Audience: technical architects and engineers.
-Status: foundation for five candidate layouts; the repository-architecture choice
-is pending. Agreed logical owners apply across them; a modular monolith remains
-the preferred candidate, subject to the
-consistency, ownership and operational checks described here.
+Status: foundation for five comparison layouts. Option 5, the modular monolith,
+is selected by [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md).
+Agreed logical owners apply across them; production consistency, ownership and
+operational guarantees still require the checks described here.
 
 ## The system being designed
 

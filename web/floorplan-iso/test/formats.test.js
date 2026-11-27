@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { sniff, check, names, acceptAttr, refusesDrag, pastedName, checkFile, SNIFF_LEN } from '../js/formats.js';
 
-// Shared with internal/convert/formats_test.go: both checks must give the
+// Shared with internal/floorplans/processing/convert/formats_test.go: both checks must give the
 // same verdict, in the same words, on the same bytes.
 const cases = JSON.parse(readFileSync(new URL('./sniff-cases.json', import.meta.url)));
 const { formats } = cases;
 const bytes = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
 
 test('the shared cases list the formats', () => {
-  assert.ok(formats?.length >= 5, 'run go test ./internal/convert -run Shared -update');
+  assert.ok(formats?.length >= 5, 'run go test ./internal/floorplans/processing/convert -run Shared -update');
 });
 
 for (const c of cases.sniff) {

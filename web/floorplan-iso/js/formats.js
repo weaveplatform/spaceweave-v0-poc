@@ -1,7 +1,7 @@
 // The page's check on a file before it's uploaded: is it a format the tracer
 // takes, and does its content agree with its name? The list of formats comes
 // from the server (/api/info); the rules for recognising content mirror
-// internal/convert/formats.go and must agree with it, or the page would
+// internal/floorplans/processing/convert/formats.go and must agree with it, or the page would
 // refuse files the server accepts, or upload ones it then refuses. The
 // server checks again either way.
 

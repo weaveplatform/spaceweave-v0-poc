@@ -9,10 +9,11 @@ compare alternative repository organisations. The
 [combined Identity](adr/0026-combine-workforce-identity-and-access-ownership.md),
 [planning inside Booking](adr/0027-keep-attendance-planning-inside-booking.md) and
 [separate Exchange](adr/0028-separate-exchange-synchronisation-from-booking.md)
-are agreed logical owners across all five options. The repository-architecture
-choice remains pending. Candidates retain their own organisations and dependency
-rules; concrete package names, evidence retention settings and activation guards
-are still subject to validation.
+are agreed logical owners across all five options. [Option 5](research/architecture-options/5-modular-monolith.md)
+is selected by [ADR 0009](adr/0009-use-a-domain-first-modular-monolith.md). The
+existing Floorplans module follows its organisation. Other candidates retain their
+comparison layouts; future evidence retention and activation guards remain
+subject to validation.
 
 This is a design record. The existing implementation is the floor-plan tool;
 the booking platform described here has not yet been implemented. The
@@ -43,7 +44,7 @@ the pool, even when physical occupancy is detected. Optional sensors support
 release after sustained vacancy following check-in. Waitlisted demand receives
 released capacity before fresh direct requests.
 
-Retain Go with the repository architecture pending, PostgreSQL-owned durable state and
+Use Go with the selected modular-monolith architecture, PostgreSQL-owned durable state and
 jobs/outbox, and Azure/GCP blob adapters for revisioned assets. Separate React/
 TypeScript portal entrypoints share UI and the existing renderer. Go owns SSO
 sessions and provider tokens. OpenAPI defines the REST transport contracts.
@@ -81,7 +82,7 @@ calendar integration/reconciliation independently; Identity retains its native
 delegation-evidence adapter. These agreed owners constrain all five comparison layouts without selecting
 a repository style or prescribing every internal package. Booking also owns
 validated operational occupancy evidence; Attendance projects committed facts
-under separately configured reporting retention. Plans asset approval is distinct
+under separately configured reporting retention. Floorplans asset approval is distinct
 from Workplace operational mapping activation, validated against Booking inventory.
 
 | Module | Owned state and behaviour | Interface callers rely on |
@@ -91,7 +92,7 @@ from Workplace operational mapping activation, validated against Booking invento
 | Policy | Versioned application-owned desk/event policies, allowed overrides, retention settings and references to desired native room configuration. | Resolve app policy and coordinate supported provider configuration; native room settings become effective through Exchange, not a local publication alone. |
 | Booking | Attendance intents/preferences/travel exceptions, allocation cycles/groups/proposals, dated inventory, holds, bookings, waitlists, room intentions/occurrences/native outcome references, owner-based room cancellation, operational evidence and desk check-in/release. | Request, allocate, confirm, transfer, cancel, check in or release capacity while enforcing the same invariants from every caller. |
 | Exchange | Provider mappings, desired/observed calendar state, native room policy/check-in observations, delta cursors/subscriptions and reconciliation work. | Consume Booking's committed room intentions and reconcile provider activity through Booking's owning room interface; never write claims directly. |
-| Plans | Drawing packages, tracing/review workflows, immutable plan/render revisions and blob metadata/asset publication. | Upload, process, approve and retrieve immutable assets; Workplace separately publishes their operational mappings. |
+| Floorplans | Drawing packages, tracing/review workflows, immutable plan/render revisions and blob metadata/asset publication. | Upload, process, approve and retrieve immutable assets; Workplace separately publishes their operational mappings. |
 | Visitors | Visitor profiles, hosted visits, visit windows and reception arrival/departure records. | Create/retrieve a visit, record reception activity and apply visitor retention. |
 | Events | Event details/audience, registration, tickets/exclusive offers, reconfirmation, waitlists, admission and venue coordination. | Register, offer, reconfirm, cancel or admit within current event capacity and eligibility, coordinating secured venue changes with Booking. |
 | Attendance and reporting | Derived attendance/occupancy projections, office-scoped reports and separately configured reporting retention. | Consume committed facts and report bookings/check-ins/occupancy distinctly; projections never authorise desk release. |
@@ -103,15 +104,19 @@ configuration, clocks and telemetry;
 business rules stay with their owning module. Reporting reads its own projections
 or published queries rather than acquiring unrestricted access to every table.
 
-## Proposed repository and interface rules
+## Repository and interface rules
 
-The responsibility sketch below does not select a layout. All five candidates
-provide concrete placement of composition, owning code, shared facilities and
-frontend entrypoints using their own dependency rules.
+The backend uses the selected Option 5 layout. Application assembly and the
+Floorplans module are implemented; staff/admin portals, public OpenAPI contracts
+and the remaining business modules below are future work.
 
 ```text
 cmd/spaceweave/                 retained executable entrypoint
-internal/                      owning components, composition and shared facilities in the chosen layout
+internal/app/                  implemented CLI/configuration and router assembly
+internal/floorplans/           implemented API, core lifecycle, processing and local adapters
+internal/gateway/portal/       implemented static hosting and host policy
+internal/platform/buildinfo/   implemented release metadata
+internal/layout/               implemented import/dependency checks
 web/staff/                     proposed staff/mobile-web entrypoint
 web/admin/                     proposed administrative entrypoint
 web/shared/                    shared UI, generated transport clients and renderer seam
@@ -126,8 +131,9 @@ style. SQL queries and migrations require ownership review. Stable-ID foreign
 keys may be used deliberately with migration
 coordination; sharing a database does not grant arbitrary foreign-table writes.
 
-Retain the existing CAD/geometry packages behind Plans rather than moving every
-package to fit the diagram. Create module structure as behaviour is implemented.
+The existing CAD/geometry packages live under `internal/floorplans/processing`;
+their algorithms and fixtures remain intact. Create other modules as their
+behaviour is implemented.
 HTTP routing remains Chi; CLI/configuration retain Cobra and strict YAML without
 Viper. Domain contracts do not depend on generated HTTP types, Graph payloads,
 SCIM wire resources or PostgreSQL row representations.
@@ -186,7 +192,7 @@ booking/check-in health distinct from degraded Exchange or notification delivery
 | Linked booking cancellation/release | Before either booking starts, explicit cancellation of either part of a both-required pair cancels both atomically; optional links permit independent cancellation. Once either starts, cancel only the selected booking unless both are explicitly chosen. Automatic desk no-show/vacancy release leaves parking booked until its own end or explicit release, retaining bay/pool usage. |
 | Main allocation run | Form collaborator groups, including singletons, then pack them into existing desks outside long transactions. Revalidate and publish the completed plan together, including required parking; intermediate placements remain proposals and previously published bookings remain protected. |
 | Workplace retirement/reactivation/deletion | Published immediate/scheduled retirement excludes new use on/after the office-local effective time, including descendants. Booking compares requested use with the lifecycle revision. Reactivation revalidates definitions/calendars/inventory while retaining identity/history; unconfirmed holds/offers cannot confirm excluded use and late Exchange effects reconcile. Confirmations remain manageable and deletion never silently cancels/cascades. |
-| Operational plan activation | Plans approves immutable assets; Workplace owns geometry-to-stable-space mappings. Booking validates dated inventory and confirmed-claim impact under version guards before activation. Approval and activation have distinct public outcomes. |
+| Operational plan activation | Floorplans approves immutable assets; Workplace owns geometry-to-stable-space mappings. Booking validates dated inventory and confirmed-claim impact under version guards before activation. Approval and activation have distinct public outcomes. |
 | Check-in, no-show and vacancy | Booking decides the transition against current state/policy. A personal check-in wins only if the allocation remains valid. Anonymous occupancy cannot reserve a released desk. Sensor outages do not establish vacancy. |
 | Native room policy and use | Exchange governs recurrence/admission, native eligibility and autorelease for one-offs and series. SpaceWeave uses supported user-context check-in and reflects provider outcomes; it does not implement a separate room timer or unverified consecutive-miss canceller. |
 | Room requests and reconciliation | Booking owns local holds/claims and transitions; Exchange owns provider observations/progress. Confirm only after acceptance and capacity revalidation. Keep external observations even if they conflict with local claims. Failed replacement after old-room loss retains meeting/attendees with no secured room; notify the organiser and offer replacements or explicit cancellation. |

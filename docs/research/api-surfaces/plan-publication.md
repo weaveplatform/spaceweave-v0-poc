@@ -13,19 +13,19 @@ design remain engineering work.
 | Administrator portal | Review and approve an immutable asset; explicitly publish its space mappings and inspect dated-inventory impact. One workflow can perform both when validation succeeds. |
 | Staff and mobile-web portal | Read the active operational mapping and its referenced approved revision, rather than treating the most recently approved drawing as active inventory. |
 | SDKs, scripts and user-context MCP | Use the same authorised approval, impact and mapping-publication contracts as the portals. |
-| Tracing and asset workers | Produce and verify immutable revisions through Plans. Completing a job does not grant authority to activate workplace definitions. |
+| Tracing and asset workers | Produce and verify immutable revisions through Floorplans. Completing a job does not grant authority to activate workplace definitions. |
 | Booking and allocation workers | Validate the effective Workplace mapping/definition revision and dated inventory before committing capacity. |
 
 ## Ownership and sequence
 
-1. Plans ingests, traces, reviews and approves an immutable asset revision. Asset
+1. Floorplans ingests, traces, reviews and approves an immutable asset revision. Asset
    metadata, review state, durability verification and asset pointers remain
-   Plans-owned.
+   Floorplans-owned.
 2. Workplace prepares the geometry-to-stable-space mapping for a floor. It owns
    the mapping revision and the operational association with the approved asset.
    Replacing geometry does not create new identities for unchanged spaces.
 3. Booking validates the proposed mapping and definition impact against dated
-   inventory and confirmed claims. Workplace cannot write claims, and Plans
+   inventory and confirmed claims. Workplace cannot write claims, and Floorplans
    cannot activate inventory through a drawing-status update.
 4. Workplace activates the validated mapping using the definition-version and
    Booking revalidation protocol. Public reads identify the active mapping and

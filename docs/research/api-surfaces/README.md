@@ -192,7 +192,7 @@ hatch. The application validates transitions regardless of which surface calls.
 | --- | --- | --- |
 | Workplace definitions | Office-scoped facilities staff configure buildings/floors/spaces/features/baseline bundles and calendars. | Definitions versus dated inventory and protected confirmed claims; impactful changes return explicit impact/workflow results. |
 | Allocation control | Authorised admins inspect cycles, demand, grouping/packing progress, proposals and unfulfilled demand; trigger permitted work. | Intermediate work remains provisional; only completed-plan publication confirms bookings. Duplicate triggers/publication do not create duplicate runs/claims. |
-| Plan management | Upload sources, inspect trace/review and approve immutable assets through Plans; publish operational geometry-to-stable-space mappings through Workplace after Booking validates impact. | Approval versus activation have separate outcomes, including in a combined admin workflow; source/report/draft access differs from staff-facing manifests. |
+| Plan management | Upload sources, inspect trace/review and approve immutable assets through Floorplans; publish operational geometry-to-stable-space mappings through Workplace after Booking validates impact. | Approval versus activation have separate outcomes, including in a combined admin workflow; source/report/draft access differs from staff-facing manifests. |
 | Reception/admission | Expected visits, arrival/departure and event-ticket scans. | Office/event capabilities; reception arrival and ticket admission are different records. Duplicate admission is explicit. |
 | Event management | Authorised organisers manage event audience, access, venue and ticket cap. | Current secured venue and active issued count are checked atomically; no arbitrary cap write through a generic admin DTO. |
 | Reporting | Scoped individual/aggregate reports and, if selected, asynchronous exports. | Subject/office/date filters authorised server-side; output fields, download access and retention are part of the contract. |
@@ -530,7 +530,7 @@ contract; none follows merely from choosing React or Kubernetes.
 ## Assets and native integrations
 
 Approved floor geometry is a consumer contract even if delivered as JSON files
-rather than under `/api`. Plans approves immutable assets; Workplace separately
+rather than under `/api`. Floorplans approves immutable assets; Workplace separately
 activates their geometry-to-stable-space mappings after Booking validates dated
 inventory/commitment impact. One admin workflow may do both, exposing each actual
 outcome. The [plan publication contract](plan-publication.md) applies across all

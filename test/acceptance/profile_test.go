@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/weaveplatform/spaceweave/internal/catalog"
-	"github.com/weaveplatform/spaceweave/internal/dxf/dxftest"
-	"github.com/weaveplatform/spaceweave/internal/server"
+	server "github.com/weaveplatform/spaceweave/internal/floorplans/adapters/http"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/localimport/catalog"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dxf/dxftest"
 )
 
 // oddLayer is a wall layer named by no convention the built-in profiles
@@ -23,7 +23,12 @@ const oddLayer = "Q-TRENNWAND"
 // reply into v when it is given.
 func (v *serving) call(t *testing.T, method, path, body string, out any) int {
 	t.Helper()
-	req, err := http.NewRequestWithContext(context.Background(), method, v.base+path, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		method,
+		v.base+path,
+		strings.NewReader(body),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,10 +100,21 @@ func readReport(t *testing.T, s *site, id string) (layerReport, []string) {
 func TestLayerRoleFromThePage(t *testing.T) {
 	v := serve(t, newAutoSite(t))
 	var info server.Info
-	if code := v.call(t, http.MethodGet, "/api/info", "", &info); code != 200 || !info.Profiles || info.Profile != "" {
+	if code := v.call(
+		t,
+		http.MethodGet,
+		"/api/info",
+		"",
+		&info,
+	); code != 200 || !info.Profiles ||
+		info.Profile != "" {
 		t.Fatalf("info: %d %+v", code, info)
 	}
-	if code, body := v.upload(t, "partitioned.dxf", dxftest.Partitioned(4, oddLayer).Bytes()); code != http.StatusCreated {
+	if code, body := v.upload(
+		t,
+		"partitioned.dxf",
+		dxftest.Partitioned(4, oddLayer).Bytes(),
+	); code != http.StatusCreated {
 		t.Fatalf("upload: %d %s", code, body)
 	}
 	ps := v.s.waitFor("the first draft", func(ps []catalog.Entry) bool {
@@ -110,7 +126,11 @@ func TestLayerRoleFromThePage(t *testing.T) {
 	}
 	report, rooms := readReport(t, v.s, e.ID)
 	if role, source := report.layer(t, oddLayer); role != "unknown" || source != "guess" {
-		t.Fatalf("the odd layer is read by what's on it, which is nothing yet: %s from %s", role, source)
+		t.Fatalf(
+			"the odd layer is read by what's on it, which is nothing yet: %s from %s",
+			role,
+			source,
+		)
 	}
 	if role, source := report.layer(t, "A-WALL"); role != "wall" || source != "builtin:aia" {
 		t.Fatalf("A-WALL: %s from %s", role, source)
@@ -129,28 +149,58 @@ func TestLayerRoleFromThePage(t *testing.T) {
 			Rules []map[string]any `json:"rules"`
 		} `json:"profile"`
 	}
-	if code := v.call(t, http.MethodGet, "/api/profiles/acme", "", &got); code != 200 || got.Exists {
+	if code := v.call(
+		t,
+		http.MethodGet,
+		"/api/profiles/acme",
+		"",
+		&got,
+	); code != 200 ||
+		got.Exists {
 		t.Fatalf("not saved yet: %d %+v", code, got)
 	}
 	rules := `{"rules": [{"role": "wall", "layer": "` + oddLayer + `"}]}`
-	if code := v.call(t, http.MethodPut, "/api/profiles/acme", rules, &got); code != 200 || !got.Active {
+	if code := v.call(
+		t,
+		http.MethodPut,
+		"/api/profiles/acme",
+		rules,
+		&got,
+	); code != 200 ||
+		!got.Active {
 		t.Fatalf("save: %d %+v", code, got)
 	}
-	if code := v.call(t, http.MethodPut, "/api/profiles/acme", `{"rules": [{"role": "wal", "layer": "x"}]}`, nil); code != 422 {
+	if code := v.call(
+		t,
+		http.MethodPut,
+		"/api/profiles/acme",
+		`{"rules": [{"role": "wal", "layer": "x"}]}`,
+		nil,
+	); code != 422 {
 		t.Fatalf("an invalid profile is refused: %d", code)
 	}
 	if code := v.call(t, http.MethodPost, "/api/plans/"+e.ID+"/retrace", "", nil); code != 200 {
 		t.Fatalf("retrace: %d\n%s", code, v.log)
 	}
 	ps = v.s.waitFor("the retrace", func(ps []catalog.Entry) bool {
-		return len(ps) == 1 && ps[0].Attempts == 2 && (ps[0].Status == catalog.Draft || ps[0].Status == catalog.Failed)
+		return len(ps) == 1 && ps[0].Attempts == 2 &&
+			(ps[0].Status == catalog.Draft || ps[0].Status == catalog.Failed)
 	}, v.log)
 	if ps[0].Status != catalog.Draft {
 		t.Fatalf("%+v\n%s", ps[0], v.log)
 	}
 	report, rooms = readReport(t, v.s, e.ID)
-	if role, source := report.layer(t, oddLayer); role != "wall" || source != "profile:acme" || report.Profile != "acme" {
-		t.Fatalf("the retrace reads the saved role: %s from %s (profile %q)", role, source, report.Profile)
+	if role, source := report.layer(
+		t,
+		oddLayer,
+	); role != "wall" || source != "profile:acme" ||
+		report.Profile != "acme" {
+		t.Fatalf(
+			"the retrace reads the saved role: %s from %s (profile %q)",
+			role,
+			source,
+			report.Profile,
+		)
 	}
 	if len(rooms) != 2 || !strings.Contains(strings.Join(rooms, "|"), "West") ||
 		!strings.Contains(strings.Join(rooms, "|"), "East") {
@@ -160,7 +210,14 @@ func TestLayerRoleFromThePage(t *testing.T) {
 	if err != nil || !strings.Contains(string(b), oddLayer) {
 		t.Fatalf("the profile is a file beside the plans: %s %v", b, err)
 	}
-	if code := v.call(t, http.MethodGet, "/api/info", "", &info); code != 200 || info.Profile != "acme" {
+	if code := v.call(
+		t,
+		http.MethodGet,
+		"/api/info",
+		"",
+		&info,
+	); code != 200 ||
+		info.Profile != "acme" {
 		t.Fatalf("the first profile saved is the one in use: %+v", info)
 	}
 }

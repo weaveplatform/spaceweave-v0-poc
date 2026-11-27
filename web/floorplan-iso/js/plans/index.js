@@ -16,7 +16,7 @@ export const DEFAULT_PLAN = 'office';
 export const LISTED = new Set(['queued', 'converting', 'tracing', 'draft', 'approved']);
 export const READY = new Set(['draft', 'approved']);
 
-// Must match the output directory the Go tracer writes (internal/catalog).
+// Must match the output directory the Go tracer writes (internal/floorplans/adapters/localimport/catalog).
 export const GENERATED = 'generated/';
 
 // Reads generated/catalog.json: every generated plan, whatever its status. A

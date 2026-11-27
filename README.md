@@ -408,6 +408,22 @@ and [Exchange synchronisation](docs/adr/0004-synchronise-room-bookings-bidirecti
 
 ## Floor rendering
 
+The backend follows [Option 5: Modular monolith](docs/research/architecture-options/5-modular-monolith.md).
+The implemented capability is Floorplans (`internal/floorplans`); the wider
+booking platform remains design work. See the [current code layout](docs/architecture.md#existing-application).
+
+Run the full import and review application with Docker:
+
+```sh
+docker compose up --build -d
+```
+
+Open http://localhost:8000. Automatic tracing runs locally without an API key.
+Uploads, generated plans and saved layer profiles persist in Docker volumes.
+Use `docker compose logs -f` to view logs and `docker compose down` to stop;
+stopping preserves the volumes. The viewer loads D3 from jsDelivr, so the browser
+needs Internet access.
+
 Its floor-rendering component turns floor-plan images into interactive isometric
 models. The microsite is in
 [`web/floorplan-iso/`](web/floorplan-iso/README.md). `go run ./cmd/spaceweave serve`
@@ -415,21 +431,21 @@ serves it with a drop zone: upload a plan image, or a DXF, DWG or SVG drawing, a
 it is traced into the site as a draft for you to approve or send back.
 
 Tracing is deterministic and needs no API key: the same file gives the same
-plan every time, and nothing leaves the machine. `internal/autotrace` reads a
+plan every time, and nothing leaves the machine. `internal/floorplans/processing/autotrace` reads a
 DXF's or DWG's entities (wall layers, door blocks, room text, exact units) and an
-image's pixels (wall bands, openings, door arcs), and `internal/floorgraph`
+image's pixels (wall bands, openings, door arcs), and `internal/floorplans/processing/floorgraph`
 joins the walls into a graph and finds the rooms. Set `tracer: claude` to have
 a Claude agent trace instead.
 
 What each layer of a drawing holds comes from layer profiles
-(`internal/autotrace/profile`): built-in ones for Uniclass 2015 codes, AIA/NCS
+(`internal/floorplans/processing/autotrace/profile`): built-in ones for Uniclass 2015 codes, AIA/NCS
 names, facilities-management exports and plain words, under a client's own
 `profiles/<name>.yaml` in the output folder (`profile:` in the config). A
 draft's Layers panel shows each layer's role and where it came from; changing
 one saves it in the client profile and traces the plan again.
 
-Drawings are rendered in Go by `internal/convert` (with `internal/dxf`,
-`internal/dwg`, `internal/svgdraw`, `internal/cad` and `internal/vector`). No external
+Drawings are rendered in Go by `internal/floorplans/processing/convert` (with `internal/floorplans/processing/dxf`,
+`internal/floorplans/processing/dwg`, `internal/floorplans/processing/svgdraw`, `internal/floorplans/processing/cad` and `internal/floorplans/processing/vector`). No external
 converter is used. [`NOTICE`](NOTICE) lists the third-party material that
 ships in the binary, and what was consulted while writing the readers.
 
@@ -477,7 +493,11 @@ starts from a current snapshot and updates again within minutes of creation.
 | Path | What |
 |---|---|
 | `cmd/<binary>/` | Entry points: thin cobra shims over `internal/`; excluded from the coverage gate |
-| `internal/` | Project-only packages; `internal/buildinfo` carries the version stamped in by `make build` |
+| `internal/app/` | CLI, strict deployment configuration and HTTP assembly |
+| `internal/floorplans/` | Floorplans module: published API, lifecycle rules, processing and local adapters |
+| `internal/gateway/portal/` | Static website hosting, host restrictions and cache policy |
+| `internal/platform/buildinfo/` | Version stamped in by `make build` |
+| `internal/layout/` | Import rules enforcing the selected module organisation |
 | `pkg/` | Public, importable packages |
 | `docs/` | Design notes and decision records |
 | `test/acceptance/` | Acceptance tests against real dependencies (excluded from `make test`) |

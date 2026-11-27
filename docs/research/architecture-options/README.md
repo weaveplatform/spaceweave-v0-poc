@@ -10,10 +10,12 @@ This comparison is for technical architects and engineers evaluating how to
 organise and evolve the application. It explains five concrete repository
 layouts, their dependency rules, state ownership, transaction boundaries,
 operating model and change costs. The documents assume no prior design discussion.
-Candidate paths illustrate possible implementations. The repository-architecture
-choice remains pending; agreed logical owners apply across all five layouts.
-A modular monolith is the preferred candidate, described by the [proposed architecture decision](../../adr/0009-use-a-domain-first-modular-monolith.md)
-and subject to validation of its actual boundaries.
+[Option 5: Modular monolith](5-modular-monolith.md) is selected by
+[ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md). The current code
+implements Floorplans under `internal/floorplans`, plus application assembly,
+portal hosting and build metadata. The other four layouts remain comparison
+records; all full-capability trees include future work and do not establish
+production correctness or performance. Agreed logical owners apply across them.
 
 Start with [architecture foundations](architecture-foundations.md), which explains
 layering, hexagonal architecture, Clean Architecture, domain-driven design and
@@ -51,7 +53,7 @@ required. [Registration-created visits and tickets](../../adr/0024-create-event-
 also commit together through Events and Visitors; reusing an existing valid
 visit does not make it subject to rollback on failed issuance. The agreed logical
 owners also include Booking operational evidence, Attendance reporting projections,
-Plans asset approval and Workplace mapping activation; these constrain all five
+Floorplans asset approval and Workplace mapping activation; these constrain all five
 layouts without selecting a repository style.
 
 - One organisation, many offices, 100,000 staff and 60,000 desks. Offices contain
@@ -169,7 +171,7 @@ layouts without selecting a repository style.
   explain how ownership is enforced in their own organisation.
 - Azure Blob and Google Cloud Storage behind one interface, active provider by
   deployment configuration; immutable plan/render revisions, PostgreSQL metadata
-  and verified recovery copies before durable/publication acknowledgement. Plans
+  and verified recovery copies before durable/publication acknowledgement. Floorplans
   approves immutable assets; Workplace publishes geometry-to-stable-space mappings
   after Booking validates dated-inventory/commitment impact. Approval is distinct
   from activation even when one admin workflow performs both.

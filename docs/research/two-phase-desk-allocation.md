@@ -53,7 +53,7 @@ requiring X and Y cannot both use it. This constructed counterexample shows why
 aggregate feature counts are insufficient; feasibility needs an actual matching
 that also respects all concurrent groups. Team edges crossing a partition and
 walking distances between physical seats are also different quantities.
-The existing [floorgraph](../../internal/floorgraph/graph.go) models walls;
+The existing [floorgraph](../../internal/floorplans/processing/floorgraph/graph.go) models walls;
 approved seating relationships and traversable connectivity require separate
 validation before they can supply operational proximity scores.
 

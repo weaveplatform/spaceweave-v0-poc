@@ -1,5 +1,5 @@
 {
- "comment": "Shared by internal/convert (Go) and test/formats.test.js: the page's check and the server's must agree. Each string character is one byte.",
+ "comment": "Shared by internal/floorplans/processing/convert (Go) and test/formats.test.js: the page's check and the server's must agree. Each string character is one byte.",
  "formats": [
   {
    "id": "png",

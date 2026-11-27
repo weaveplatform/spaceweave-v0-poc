@@ -88,7 +88,7 @@ export function inPipeline(plans) {
 // ---- floor packages: the files a plan is traced from besides its drawing.
 
 // What each role is called. The keys must match catalog.Role* in
-// internal/catalog.
+// internal/floorplans/adapters/localimport/catalog.
 export const ROLES = { architecture: 'Drawing', spaces: 'Space plan', reference: 'Reference' };
 
 // The formats a space plan is read from, and the plan's drawing must be
