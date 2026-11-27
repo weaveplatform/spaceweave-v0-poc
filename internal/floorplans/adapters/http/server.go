@@ -66,8 +66,9 @@ type Profiles interface {
 
 // Server translates HTTP requests into Floorplans operations.
 type Server struct {
-	Store api.Service
-	Info  Info
+	Store  api.Service
+	Assets api.Assets
+	Info   Info
 	// Wake tells the workers a plan has been queued.
 	Wake      func()
 	Log       *slog.Logger

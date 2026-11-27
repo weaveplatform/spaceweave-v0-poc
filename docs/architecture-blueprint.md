@@ -121,7 +121,9 @@ web/staff/                     proposed staff/mobile-web entrypoint
 web/admin/                     proposed administrative entrypoint
 web/shared/                    shared UI, generated transport clients and renderer seam
 web/floorplan-iso/             retained renderer during incremental adoption
-api/                           proposed OpenAPI source contracts
+api/                           implemented product/operator OpenAPI fragments and bundles
+pkg/{client,sdk}/              generated clients and supported Go SDK
+cmd/spaceweavectl/             remote control client
 ```
 
 Composition constructs owning implementations and exposes only approved

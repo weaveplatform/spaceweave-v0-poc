@@ -16,11 +16,15 @@ technical guidance and design tradeoffs.
 ## Existing application
 
 The current implementation is the Floorplans module of the selected modular
-monolith. It imports drawings, traces and validates models, publishes drafts,
+monolith, with [versioned product/operator REST contracts](rest-apis.md), generated
+Go clients, a supported SDK and the remote `spaceweavectl` CLI. It imports drawings, traces and validates models, publishes drafts,
 and supports review through the existing CLI and JavaScript/D3 workbench.
 
 ```text
 internal/
+├── ctl/                        remote CLI over the public SDK
+├── transport/gen/              generated product and operator contracts
+├── devtools/                   deterministic contract tooling
 ├── app/
 │   ├── cli/                     Cobra commands and presentation
 │   ├── config/                  strict deployment YAML and environment settings
@@ -36,8 +40,8 @@ internal/
 │       ├── inbox/               local input watcher
 │       ├── localimport/catalog/ file-backed catalogue and output directory
 │       └── fakeclaude/          test provider for the optional tracer
-├── gateway/portal/              static assets, host restrictions and cache policy
-├── platform/buildinfo/          release metadata
+├── gateway/                    portal hosting and read-only operator diagnostics
+├── platform/                   build metadata and shared HTTP/auth/problem conventions
 └── layout/                      dependency and ownership import checks
 ```
 

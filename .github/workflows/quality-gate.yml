@@ -49,6 +49,9 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Verify generated REST contracts
+        run: make verify-generate
+
       - name: Vet
         run: go vet ./...
 
@@ -98,7 +101,7 @@ jobs:
         working-directory: web/floorplan-iso
         run: npm test
 
-      - name: Acceptance tests (coverage)
+      - name: Acceptance tests and Gherkin features (coverage)
         run: make acceptance
 
       - name: Upload acceptance coverage

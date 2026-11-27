@@ -23,7 +23,7 @@ export function initWorkspace({ onFocus, onClear, onWholeFloor, onModelShown }) 
     for (const button of document.querySelectorAll('[data-evidence]')) button.setAttribute('aria-pressed', String(button.dataset.evidence === visual));
     if (visual === 'model') return;
     const image = $('evidence-image');
-    const url = visual === 'overlay' && entry?.generated ? `${entry.dir}overlay.png` : plan?.SOURCE.url;
+    const url = visual === 'overlay' && entry?.generated ? entry.artifactUrl('overlay') : plan?.SOURCE.url;
     const failed = image.dataset.failed === url;
     $('evidence-error').hidden = Boolean(url) && !failed;
     image.hidden = !url || failed;
@@ -98,12 +98,12 @@ export function initWorkspace({ onFocus, onClear, onWholeFloor, onModelShown }) 
       ? `Tracer confidence: ${Math.round(entry.confidence * 100)}%. This is not a measured accuracy score.` : '';
     const links = [];
     if (entry.generated) {
-      links.push(['Trace overlay', 'overlay.png'], ['Trace report', 'report.json']);
-      if (entry.drawing) links.push(['Rendered drawing', entry.drawing]);
-      if (entry.upload) links.push(['Original file', entry.upload]);
+      links.push(['Trace overlay', entry.artifactUrl('overlay')], ['Trace report', entry.artifactUrl('report')]);
+      if (entry.drawing) links.push(['Rendered drawing', entry.artifactUrl('drawing')]);
+      if (entry.upload) links.push(['Original file', entry.artifactUrl('original')]);
     }
     $('evidence-links').replaceChildren(...links.map(([label, file]) => {
-      const a = document.createElement('a'); a.textContent = label; a.href = `${entry.dir}${file}`; a.target = '_blank'; a.rel = 'noopener'; return a;
+      const a = document.createElement('a'); a.textContent = label; a.href = file; a.target = '_blank'; a.rel = 'noopener'; return a;
     }));
     document.querySelector('[data-evidence="overlay"]').disabled = !entry.generated;
     if (!entry.generated && evidence === 'overlay') evidence = 'model';
@@ -115,9 +115,7 @@ export function initWorkspace({ onFocus, onClear, onWholeFloor, onModelShown }) 
     if (!entry.generated) { $('checks-summary').textContent = 'Example plan. Import your own drawing to review a trace.'; return; }
     $('checks-summary').textContent = 'Loading trace checks…';
     try {
-      const response = await fetch(`${entry.dir}report.json`, { cache: 'no-store' });
-      if (!response.ok) throw Error('Trace report unavailable.');
-      const report = await response.json();
+      const report = await entry.readArtifact('report');
       if (reportKey !== key) return;
       const caveats = report.caveats ?? [];
       $('checks-summary').textContent = caveats.length ? `${caveats.length} items to check against the source drawing.` : 'No warnings reported. Compare the model with the source before approval.';

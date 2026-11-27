@@ -30,6 +30,7 @@ import (
 	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/convert"
 	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/plan"
 	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/vector"
+	"github.com/weaveplatform/spaceweave/internal/gateway/operations"
 	"github.com/weaveplatform/spaceweave/internal/platform/buildinfo"
 )
 
@@ -278,6 +279,12 @@ func serveCmd(app App, f *flags) *cobra.Command {
 					err,
 				)
 			}
+			productToken, _ := app.Getenv("SPACEWEAVE_API_TOKEN")
+			operatorToken, _ := app.Getenv("SPACEWEAVE_OPERATOR_TOKEN")
+			if productToken != "" && productToken == operatorToken {
+				return fmt.Errorf("%w: product and operator credentials must differ", ErrUsage)
+			}
+
 			ln, err := (&net.ListenConfig{}).Listen(cmd.Context(), "tcp", s.Addr)
 			if err != nil {
 				return fmt.Errorf("listen: %w", err)
@@ -298,13 +305,31 @@ func serveCmd(app App, f *flags) *cobra.Command {
 			}
 			srv := &server.Server{
 				Store:    d.module.Plans(),
+				Assets:   d.module.Assets(),
 				Wake:     d.module.Wake,
 				Log:      d.log,
 				Info:     info(d.c),
 				Profiles: d.module.Profiles(),
 			}
+			operator := &operations.Server{
+				Plans:   d.module.Plans(),
+				Version: buildinfo.Version(),
+				Tracer:  d.c.Tracer,
+				Workers: d.c.Workers,
+				Token:   operatorToken,
+			}
 			hs := &http.Server{
-				Handler:           application.Router(s.Site, d.c.Output, hosts, srv.Handler()),
+				Handler: application.Router(
+					s.Site,
+					d.c.Output,
+					hosts,
+					srv.Handler(),
+					application.Surfaces{
+						Product:      srv.ProductHandler(),
+						Operator:     operator.Handler(),
+						ProductToken: productToken,
+					},
+				),
 				ReadHeaderTimeout: 10 * time.Second,
 			}
 			d.log.Info("serving", "url", "http://"+ln.Addr().String()+"/", "site", s.Site)

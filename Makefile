@@ -49,7 +49,7 @@ test:
 	@rm -rf $(COVER_DIR)/unit && mkdir -p $(COVER_DIR)/unit
 	$(GO) test -race -shuffle=on -count=1 -timeout 25m -cover -coverpkg=$(MODULE)/... $(UNIT_PKGS) -args -test.gocoverdir=$(CURDIR)/$(COVER_DIR)/unit
 
-## acceptance: build the binary with coverage and drive it end to end (needs node); coverage to cover/acceptance
+## acceptance: run Go acceptance tests and strict Gherkin features against both binaries (needs node); coverage to cover/acceptance
 acceptance:
 	@rm -rf $(COVER_DIR)/acceptance && mkdir -p $(COVER_DIR)/acceptance
 	SPACEWEAVE_COVERDIR=$(CURDIR)/$(COVER_DIR)/acceptance $(GO) test -count=1 ./test/acceptance/...
@@ -86,7 +86,7 @@ build:
 	done
 
 ## gate: everything CI runs, in order
-gate: vet lint test eval acceptance cover vuln build
+gate: verify-generate vet lint test eval acceptance cover vuln build
 
 .PHONY: help init fmt lint vet test acceptance eval cover vuln build gate
 
@@ -95,3 +95,24 @@ quality:
 	SPACEWEAVE_QUALITY_TRIALS=1 $(GO) test -count=1 -run 'TestQualityTrials|TestRasterTrials' -v ./internal/floorplans/processing/autotrace ./internal/floorplans/processing/autotrace/cadfront
 
 .PHONY: quality
+
+# Pins match the verified OpenAPI 3.0.3 toolchain; tools run in their own module graph.
+OAPI_CODEGEN := github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.2
+SPECS := api operator
+
+## bundle: validate and bundle the product and operator REST contracts
+bundle:
+	$(GO) run ./tools/openapi-bundle --src api/src --out api
+
+## generate: generate strict Chi servers and public Go clients from the bundles
+generate: bundle
+	@for surface in $(SPECS); do \
+		$(GO) run $(OAPI_CODEGEN) -config api/oapi-server-$$surface.yaml api/$$surface.openapi.yaml || exit 1; \
+		$(GO) run $(OAPI_CODEGEN) -config api/oapi-client-$$surface.yaml api/$$surface.openapi.yaml || exit 1; \
+	done
+
+## verify-generate: fail if contract bundles or generated clients/servers are stale
+verify-generate:
+	$(GO) run ./tools/verify-generate
+
+.PHONY: bundle generate verify-generate

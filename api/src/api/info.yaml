@@ -1,0 +1,10 @@
+info:
+  description: Floorplans business operations shared by browser, CLI and automation. Local workbench mode uses host/origin protections. A configured product bearer token is required when enabled; full staff identity integration is a separate capability.
+  title: SpaceWeave product API
+  version: 0.1.0
+openapi: 3.0.3
+security:
+  - bearerAuth: []
+  - {}
+servers:
+  - url: /api/v1

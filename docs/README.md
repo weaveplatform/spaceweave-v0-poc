@@ -1,5 +1,7 @@
 # Documentation
 
+- [Implemented REST APIs and clients](rest-apis.md): product/operator contracts, SDK, remote CLI and local-runtime access.
+
 Design notes, decision records and operator guides for this repository live
 here. Decision records live in `docs/adr/`.
 

@@ -44,7 +44,7 @@ export function initWorkbench({ plans, current, refresh, open, onImportStarted, 
   const spaceAdd = $('space-add');
   const spaceInput = $('space-file');
 
-  let info = null; // the server's answer to /api/info; null without the API
+  let info = null; // the server's answer to /api/v1/info; null without the API
   let drawings = new Set(); // ids of the formats converted before tracing
   const uploading = new Map(); // files on their way, shown before the server has an id
   const mine = new Set(); // plans sent from this page, announced when they're done
@@ -252,8 +252,7 @@ export function initWorkbench({ plans, current, refresh, open, onImportStarted, 
     let rows = [];
     try {
       if (roles.length === 0) roles = (await api.profile(info.profile || 'generic')).roles;
-      const res = await fetch(`${entry.dir}report.json`, { cache: 'no-store' });
-      if (res.ok) rows = layerRows(await res.json());
+      rows = layerRows(await entry.readArtifact('report'));
     } catch (err) {
       console.warn('layers unavailable:', err);
     }
@@ -387,7 +386,7 @@ export function initWorkbench({ plans, current, refresh, open, onImportStarted, 
     const entry = shown();
     const rows = packageRows(entry);
     if (entry?.generated && entry.upload) rows.unshift({ sha: 'drawing', name: entry.files?.find(f => f.role === 'architecture')?.name ?? entry.name,
-      href: `${entry.dir}${entry.upload}`, label: 'Drawing', locked: true });
+      href: entry.artifactUrl('original'), label: 'Drawing', locked: true });
     const adding = Boolean(info) && canAddSpaces(entry) && entry.status === 'draft';
     packagePanel.hidden = !info || !entry?.generated || (!adding && rows.length === 0);
     if (packagePanel.hidden) return;
@@ -507,8 +506,9 @@ export function initWorkbench({ plans, current, refresh, open, onImportStarted, 
         ? `The image is sent to the Claude API (${i.model}); each plan costs up to $${i.maxUsd}.`
         : 'Plans are traced on this server; nothing is sent anywhere.');
     update();
-  }).catch(() => {
+  }).catch(err => {
     offline.hidden = false;
+    if (err.status !== 404) say(`Floorplan service unavailable: ${err.message}`, true);
   });
 
   return { update };

@@ -406,6 +406,28 @@ policy defaults. The agreed decisions cover
 [desk check-in](docs/adr/0003-require-assignee-check-in-to-mark-a-desk-taken.md)
 and [Exchange synchronisation](docs/adr/0004-synchronise-room-bookings-bidirectionally-with-exchange-online.md).
 
+## REST APIs and clients
+
+The product contract is `/api/v1`; the separate installation contract is
+`/operator/v1`. The operator surface currently reports runtime configuration and
+plan-state counts, without business mutations. Both have bundled OpenAPI specs,
+generated Go clients and a public [SDK](pkg/README.md).
+
+`spaceweavectl` calls those REST contracts remotely; `spaceweave` retains local
+server, watcher, conversion and tracing commands. For a running local instance:
+
+```sh
+go run ./cmd/spaceweavectl --endpoint http://127.0.0.1:8000 floorplans list --all
+```
+
+The default browser workbench needs no product token. Server credentials are
+read only from `SPACEWEAVE_API_TOKEN` and `SPACEWEAVE_OPERATOR_TOKEN`; the remote
+client uses `SPACEWEAVECTL_ENDPOINT`, `SPACEWEAVECTL_TOKEN` and
+`SPACEWEAVECTL_OPERATOR_TOKEN`. Operator access always requires its independent
+configured credential. This does not implement staff/Entra authentication.
+See [REST APIs and clients](docs/rest-apis.md) for endpoint tables, credential
+scope, compatibility and current storage/retry limitations.
+
 ## Floor rendering
 
 The backend follows [Option 5: Modular monolith](docs/research/architecture-options/5-modular-monolith.md).
@@ -421,7 +443,8 @@ docker compose up --build -d
 Open http://localhost:8000. Automatic tracing runs locally without an API key.
 Uploads, generated plans and saved layer profiles persist in Docker volumes.
 Use `docker compose logs -f` to view logs and `docker compose down` to stop;
-stopping preserves the volumes. The viewer loads D3 from jsDelivr, so the browser
+stopping preserves the volumes. The image includes Node 22 for plan validation.
+The viewer loads D3 from jsDelivr, so the browser
 needs Internet access.
 
 Its floor-rendering component turns floor-plan images into interactive isometric
@@ -498,7 +521,9 @@ starts from a current snapshot and updates again within minutes of creation.
 | `internal/gateway/portal/` | Static website hosting, host restrictions and cache policy |
 | `internal/platform/buildinfo/` | Version stamped in by `make build` |
 | `internal/layout/` | Import rules enforcing the selected module organisation |
-| `pkg/` | Public, importable packages |
+| `api/` | Product/operator OpenAPI fragments, bundles and generation configuration |
+| `pkg/sdk/` | Public typed SDK for product and operator consumers |
+| `pkg/client/` | Generated Go clients and wire types |
 | `docs/` | Design notes and decision records |
 | `test/acceptance/` | Acceptance tests against real dependencies (excluded from `make test`) |
 
@@ -506,7 +531,9 @@ starts from a current snapshot and updates again within minutes of creation.
 
 | Target | What |
 |---|---|
-| `make gate` | Everything CI runs: vet, lint, test, acceptance, cover, vuln, build |
+| `make gate` | Everything CI runs: generated-contract freshness, vet, lint, test, acceptance, cover, vuln, build |
+| `make generate` | Validate/bundle OpenAPI fragments and generate strict Chi servers and Go clients |
+| `make verify-generate` | Fail when checked-in contract bundles or generated files are stale |
 | `make test` | Unit tests with `-race -shuffle=on`, coverage to `cover/unit` |
 | `make acceptance` | Builds `spaceweave` with coverage and drives it, with no API key and against a fake Claude API, using the real node validator; coverage to `cover/acceptance` |
 | `make eval` | Prints the automatic tracer's accuracy on plan images drawn from the hand traces |

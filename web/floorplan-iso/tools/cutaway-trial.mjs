@@ -3,6 +3,7 @@
 // Outputs cut-wall counts and interaction results, never coordinates or drawings.
 import assert from 'node:assert/strict';
 import { connect } from './browser.mjs';
+import { productApi, listFloorplans } from './product-api.mjs';
 import { writeFile } from 'node:fs/promises';
 
 const [site, output] = process.argv.slice(2);
@@ -12,7 +13,8 @@ if (!site || !output) {
 }
 const debug = `http://127.0.0.1:${process.env.SPACEWEAVE_CHROME_DEBUG_PORT || 9267}`;
 const base = new URL(site);
-const catalogue = await (await fetch(new URL('generated/catalog.json', base))).json();
+const api = productApi(base);
+const catalogue = { plans: await listFloorplans(api) };
 const plans = catalogue.plans.filter(p => ['draft', 'approved'].includes(p.status));
 assert.ok(plans.length, 'need at least one generated floor');
 
@@ -23,7 +25,8 @@ async function exerciseFloor(id) {
   const {createRoomCutaway}=await import('./js/cutaway.js');
   const {makeView}=await import('./js/projection.js');
   const {polygonArea}=await import('./js/geometry.js');
-  const plan=await (await fetch(`generated/${id}/plan.json`)).json();
+  const {createApi}=await import('./js/api.js');
+  const plan=await createApi().artifact(id,'model');
   const check=(ok,message)=>{if(!ok)throw Error(message)};
   const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const set=async values=>{Object.assign(floorplan.state,values);floorplan.invalidate();await frames()};

@@ -12,15 +12,34 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Options keeps asset access under the same credential policy as product reads.
+type Options struct {
+	FileMiddleware func(http.Handler) http.Handler
+}
+
 // Handler serves the portal and generated assets under the same local host
 // policy as its API. The generated directory may live outside the site folder.
-func Handler(site, generated string, hosts []string, api http.Handler) http.Handler {
+func Handler(
+	site, generated string,
+	hosts []string,
+	api http.Handler,
+	options ...Options,
+) http.Handler {
 	r := chi.NewRouter()
 	r.Use(func(next http.Handler) http.Handler { return allowHost(hosts, next) }, noStore)
 	r.Handle("/api", api)
 	r.Handle("/api/*", api)
-	r.Handle("/generated/*", http.StripPrefix("/generated", files(generated)))
-	r.Handle("/*", files(site))
+	r.Handle("/operator/*", api)
+	generatedFiles := http.StripPrefix("/generated", files(generated))
+	siteFiles := files(site)
+	if len(options) > 0 && options[0].FileMiddleware != nil {
+		generatedFiles = options[0].FileMiddleware(generatedFiles)
+		// The public catchall can resolve encoded/case-aliased generated paths on
+		// local filesystems. Protect every filesystem read, not just one route.
+		siteFiles = options[0].FileMiddleware(siteFiles)
+	}
+	r.Handle("/generated/*", generatedFiles)
+	r.Handle("/*", siteFiles)
 	return r
 }
 

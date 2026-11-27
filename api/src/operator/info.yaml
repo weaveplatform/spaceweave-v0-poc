@@ -1,0 +1,9 @@
+info:
+  description: Installation diagnostics only. Requires a separately configured operator bearer token. Product credentials do not grant operator authority. Operator functions do not approve or modify floorplans.
+  title: SpaceWeave operator API
+  version: 0.1.0
+openapi: 3.0.3
+security:
+  - bearerAuth: []
+servers:
+  - url: /operator/v1

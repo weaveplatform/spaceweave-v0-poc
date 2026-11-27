@@ -3,6 +3,7 @@
 // Outputs desk counts and interaction results, never coordinates or drawings.
 import assert from 'node:assert/strict';
 import { connect } from './browser.mjs';
+import { productApi, listFloorplans } from './product-api.mjs';
 import { writeFile } from 'node:fs/promises';
 
 const [site, output] = process.argv.slice(2);
@@ -12,7 +13,8 @@ if (!site || !output) {
 }
 const debug = `http://127.0.0.1:${process.env.SPACEWEAVE_CHROME_DEBUG_PORT || 9267}`;
 const base = new URL(site);
-const catalogue = await (await fetch(new URL('generated/catalog.json', base))).json();
+const api = productApi(base);
+const catalogue = { plans: await listFloorplans(api) };
 const plans = catalogue.plans.filter(p => ['draft', 'approved'].includes(p.status));
 assert.ok(plans.length, 'need at least one generated floor');
 
@@ -71,7 +73,7 @@ try {
   assert.ok(ready, 'initial floor settles');
   const results = [];
   for (const plan of plans) {
-    const source = await (await fetch(new URL(`generated/${plan.id}/plan.json`, base))).json();
+    const source = await api.artifact(plan.id, 'model');
     const expected = source.furniture.filter(f=>f.type==='desk').length;
     await evaluate(`(async()=>{await floorplan.loadPlan(${JSON.stringify(plan.id)});d3.timerFlush();d3.select(document.body).interrupt('build')})()`);
     await state({ build: 1, moving: false, theta: -45, phi: 35.26, furniture: true, cutawayMode: 'exterior' });

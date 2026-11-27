@@ -6,7 +6,7 @@ staff identity, capacity management, enterprise integrations and distributed
 operation. This inventory establishes which current HTTP, file, browser, CLI
 and worker contracts must be preserved or deliberately replaced during that work.
 
-Source baseline: 27 November 2026, after the Option 5 Floorplans refactor. Route
+Source baseline: 27 November 2026, after the versioned REST and remote-client implementation. Route
 and behaviour claims cite the current implementation. The five
 [architecture layouts](../architecture-options/README.md) remain comparison
 records; selecting Option 5 does not implement the wider booking platform.
@@ -17,14 +17,42 @@ records; selecting Option 5 does not implement the wider booking platform.
 | --- | --- | --- |
 | Go package layout | Public importable packages in `pkg`, project-only packages in `internal`, entrypoints in `cmd`. | [Engineering conventions](../../../CLAUDE.md) |
 | Runtime/tooling | Chi HTTP, Cobra CLI without Viper, strict YAML configuration. | [Engineering conventions](../../../CLAUDE.md) |
-| Public SDK | `pkg` contains guidance; it does not yet publish a floor-plan client or booking SDK. | [Public-package guidance](../../../pkg/README.md) |
+| Public SDK | `pkg/client/api` and `pkg/client/operator` publish generated clients; `pkg/sdk` supports current Floorplans and operator calls. | [Public-package guidance](../../../pkg/README.md) |
 
-## Implemented HTTP ingress
+## Versioned REST surfaces and remote clients
+
+The implemented [REST guide](../../rest-apis.md) and bundled
+[product](../../../api/api.openapi.yaml)/[operator](../../../api/operator.openapi.yaml)
+contracts are authoritative for the current wire interface. Editable fragments
+live under `api/src`; `make generate` produces strict Chi server contracts in
+`internal/transport/gen` and Go clients in `pkg/client`. `make verify-generate`
+checks reproducibility independently of Git staging.
+
+The product API at `/api/v1` exposes all current import/review/profile operations,
+plus paginated floorplan list/detail, artifact and attachment reads and current
+processing-attempt status. The operator API at `/operator/v1` exposes only
+`GET /runtime`, with configured worker concurrency and current state counts.
+Operator credentials confer no product authority. `spaceweavectl` calls these
+surfaces through `pkg/sdk`; local `spaceweave` commands remain available.
+
+Product bearer credentials are optional for the local workbench. Configuring
+`SPACEWEAVE_API_TOKEN` protects product routes, compatibility routes and all portal file reads. Operator access requires a separate `SPACEWEAVE_OPERATOR_TOKEN` and is
+disabled without one. These environment credentials do not implement staff SSO,
+office scopes or application RBAC. See [transport authentication](../../../internal/platform/httpkit/auth.go).
+
+The browser uses product REST reads in normal operation; an explicit static-only
+fallback remains for the Python viewer when API discovery returns a bare 404.
+Authentication, structured problem and server errors never enable file fallback.
+The local catalogue still owns queue state and fixed artifacts. Current-attempt
+status is not immutable operation history; durable retry receipts and distributed
+leases remain future work. The SDK therefore does not automatically retry writes.
+
+## Legacy HTTP ingress
 
 Floorplans API routes are registered by `Server.Handler` in the
 [HTTP adapter](../../../internal/floorplans/adapters/http/server.go).
 [Application routing](../../../internal/app/router.go) composes those routes with
-[portal hosting](../../../internal/gateway/portal/portal.go); no OpenAPI server is generated yet.
+[portal hosting](../../../internal/gateway/portal/portal.go); the legacy surface remains available beside the generated versioned routes.
 Seven explicit API route patterns produce ten concrete operations when the four
 review actions are counted separately. Profile routes require a non-nil library.
 
@@ -44,7 +72,7 @@ review actions are counted separately. Profile routes require a non-nil library.
 `{action}` is one generic route, with the four accepted values checked by Floorplans lifecycle policy inside the
 catalogue transaction. Unknown action or plan maps to `404`; invalid transition to `409`.
 There is no implemented `GET /api/plans`, `GET /api/plans/{id}`, plan-delete,
-booking, login, SCIM, health or versioned `/v1` application route.
+booking, login or SCIM route on this legacy surface. Versioned routes are listed above.
 
 | Other mounted HTTP surface | Routing/detail | Evidence |
 | --- | --- | --- |
@@ -55,13 +83,13 @@ booking, login, SCIM, health or versioned `/v1` application route.
 | Separate static development server | Python `SimpleHTTPRequestHandler`, `127.0.0.1:8000`, `Cache-Control:no-store`; no upload/review API. | [serve.py](../../../web/floorplan-iso/tools/serve.py#L14) |
 | Separate test provider | Chi `POST /v1/messages` in `internal/floorplans/adapters/fakeclaude`; an `httptest` Anthropic stand-in, not a SpaceWeave product endpoint. | [fakeclaude.New](../../../internal/floorplans/adapters/fakeclaude/fakeclaude.go) |
 
-## Existing wire behaviour and access assumptions
+## Legacy wire behaviour and access assumptions
 
 | Concern | Actual behaviour | Evidence |
 | --- | --- | --- |
 | Host guard | All Go-server requests require `localhost`, `*.localhost`, loopback IP or configured extra host; otherwise `421`. `serve` can add its explicit bound address. | [allowHost](../../../internal/gateway/portal/portal.go), [serve wiring](../../../internal/app/cli/cli.go) |
 | Mutation guard | API methods other than GET/HEAD require `X-Spaceweave: 1`; supplied `Origin` must have the same `Host` as request. Missing Origin is accepted; comparison checks host, not a full scheme-origin tuple. | [sameOrigin](../../../internal/floorplans/adapters/http/server.go) |
-| Authentication | These are local-browser/DNS-rebinding protections. No user login, session store, bearer verification, role/capability or office-scope authorisation is implemented in the handler. | [complete middleware/routes](../../../internal/floorplans/adapters/http/server.go) |
+| Authentication | These are local-browser/DNS-rebinding protections. The application can require a configured product bearer credential for these routes. Staff login, sessions, scoped capabilities and Entra integration remain future work. | [complete middleware/routes](../../../internal/floorplans/adapters/http/server.go) |
 | CORS/cache | No CORS approval mechanism; requests passing the host guard receive `Cache-Control: no-store`. The custom header is not an identity credential. | [portal host policy](../../../internal/gateway/portal/portal.go), [noStore](../../../internal/gateway/portal/portal.go) |
 | Upload eligibility | PNG, JPEG, WebP, DXF, DWG and SVG. Extension/content agreement checked; drawings defer deeper conversion validation to worker. | [Formats](../../../internal/floorplans/processing/convert/formats.go), [check](../../../internal/floorplans/adapters/http/server.go) |
 | Upload limits | Default 40 MiB request body; image limit 100 million pixels; multipart text fields bounded at 1 KiB. | [limits](../../../internal/floorplans/adapters/http/server.go), [receive](../../../internal/floorplans/adapters/http/files.go) |
@@ -117,7 +145,7 @@ The root registers five command families ([New](../../../internal/app/cli/cli.go
 
 Automatic tracing is default and constructs no Anthropic client. Claude mode is
 explicit configuration and obtains provider credentials through the SDK on the
-Go side; the browser never supplies a Claude API key ([newWorker](../../../internal/app/cli/cli.go)).
+Go side; the browser never supplies a Claude API key ([newWorker](../../../internal/floorplans/module.go)).
 
 ## Local queue versus proposed durable work
 

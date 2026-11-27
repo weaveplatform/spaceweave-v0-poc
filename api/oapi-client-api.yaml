@@ -1,0 +1,7 @@
+generate:
+  client: true
+  models: true
+output: pkg/client/api/client.gen.go
+output-options:
+  skip-prune: true
+package: api

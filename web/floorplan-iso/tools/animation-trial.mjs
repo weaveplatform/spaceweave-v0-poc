@@ -3,6 +3,7 @@
 // Outputs timings and SVG hashes, never plan coordinates or source drawings.
 import assert from 'node:assert/strict';
 import { connect } from './browser.mjs';
+import { productApi, listFloorplans } from './product-api.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 const [site, output, baseline] = process.argv.slice(2);
@@ -12,7 +13,8 @@ if (!site || !output) {
 }
 const debug = `http://127.0.0.1:${process.env.SPACEWEAVE_CHROME_DEBUG_PORT || 9267}`;
 const base = new URL(site);
-const catalogue = await (await fetch(new URL('generated/catalog.json', base))).json();
+const api = productApi(base);
+const catalogue = { plans: await listFloorplans(api) };
 const plans = catalogue.plans.filter(p => ['draft', 'approved'].includes(p.status));
 assert.ok(plans.length, 'need at least one generated floor');
 

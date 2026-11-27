@@ -75,24 +75,24 @@ test('the API client sends the request header on every POST', async () => {
   const api = createApi(impl);
   const file = new File([new Uint8Array([137, 80, 78, 71])], 'image.png', { type: 'image/png' });
   assert.deepEqual(await api.upload(file, 'Pasted plan.png'), { plan: { id: 'x' }, duplicate: false });
-  assert.equal(calls[0].url, 'api/plans');
+  assert.equal(calls[0].url, '/api/v1/floorplans');
   assert.equal(calls[0].init.headers[REQUEST_HEADER], '1');
   assert.equal(calls[0].init.body.get('image').name, 'Pasted plan.png');
 
   await api.review('a b', 'reject', 'Add the kitchen');
-  assert.equal(calls[1].url, 'api/plans/a%20b/reject');
+  assert.equal(calls[1].url, '/api/v1/floorplans/a%20b/reject');
   assert.equal(calls[1].init.headers[REQUEST_HEADER], '1');
   assert.equal(calls[1].init.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(calls[1].init.body), { note: 'Add the kitchen' });
 
   await api.info();
-  assert.equal(calls[2].url, 'api/info');
+  assert.equal(calls[2].url, '/api/v1/info');
   assert.equal(calls[2].init.headers, undefined, 'a GET needs no header');
   assert.equal(calls[2].init.cache, 'no-store');
 });
 
 test('API errors carry the server message, or the status when there is none', async () => {
-  await assert.rejects(createApi(fakeFetch(409, { error: 'x is draft' }).impl).review('x', 'retry'),
+  await assert.rejects(createApi(fakeFetch(409, { type: 'about:blank', title: 'Conflict', status: 409, detail: 'x is draft' }).impl).review('x', 'retry'),
     (err) => err instanceof ApiError && err.status === 409 && err.message === 'x is draft');
   await assert.rejects(createApi(fakeFetch(404).impl).info(), /HTTP 404/, 'a static server has no API');
 });
