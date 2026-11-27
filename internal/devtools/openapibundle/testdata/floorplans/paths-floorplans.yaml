@@ -1,0 +1,14 @@
+paths:
+  /floorplans:
+    get:
+      operationId: listFloorplans
+      tags: [floorplans]
+      responses:
+        "200":
+          description: Every floorplan.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Floorplan'

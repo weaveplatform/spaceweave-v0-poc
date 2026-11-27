@@ -1,25 +1,25 @@
 paths:
-  /widgets/{widgetId}:
+  /floorplans/{floorplanId}:
     get:
-      operationId: getWidget
-      tags: [widgets]
+      operationId: getFloorplan
+      tags: [floorplans]
       parameters:
-        - name: widgetId
+        - name: floorplanId
           in: path
           required: true
           schema: {type: string}
       responses:
         "200":
-          description: The widget.
+          description: The floorplan.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Widget'
+                $ref: '#/components/schemas/Floorplan'
         "404":
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
-    Widget:
+    Floorplan:
       type: object
       properties:
         id: {type: string}

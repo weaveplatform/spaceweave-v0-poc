@@ -4,8 +4,7 @@
 // without one enormous file; the bundle is generated and committed so a
 // reader of api/<service>.openapi.yaml sees the whole surface.
 //
-// The rules match weaveplatform-artifact-registry's bundler, so fragments
-// read the same in both repositories: info.yaml holds the document head,
+// info.yaml holds the document head,
 // every other *.yaml holds only paths and components, and nothing may be
 // defined twice. Bundle merges one service directory; BundleAll merges every
 // one under a root. The result must validate as OpenAPI 3.0.3.
