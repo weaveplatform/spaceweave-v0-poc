@@ -5,7 +5,7 @@ managed-room admission, check-in and autorelease across SpaceWeave and Outlook.
 SpaceWeave records booking intentions, maintains local consistency and reflects
 provider decisions through supported integrations. It does not run a second
 room-admission policy or expiry authority. This requirement applies to all five
-repository architecture candidates; the repository-style decision remains pending.
+repository architecture candidates; Option 5 is the selected repository layout.
 
 ## Consumers and authority
 

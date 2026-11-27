@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/weaveplatform/spaceweave/internal/autotrace/synth"
-	"github.com/weaveplatform/spaceweave/internal/catalog"
-	"github.com/weaveplatform/spaceweave/internal/dxf/dxftest"
-	"github.com/weaveplatform/spaceweave/internal/plan"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/localimport/catalog"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/autotrace/synth"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dxf/dxftest"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/plan"
 )
 
 // autoTrace traces file in a fresh key-less site with the one-off command
@@ -28,7 +28,8 @@ func autoTrace(t *testing.T, name string, data []byte) (catalog.Entry, []byte, m
 		t.Fatalf("exit %d\n%s\n%s", code, out, errOut)
 	}
 	ps := s.plans()
-	if len(ps) != 1 || ps[0].Status != catalog.Draft || ps[0].Tracer != "auto" || ps[0].CostUSD != 0 {
+	if len(ps) != 1 || ps[0].Status != catalog.Draft || ps[0].Tracer != "auto" ||
+		ps[0].CostUSD != 0 {
 		t.Fatalf("%+v", ps)
 	}
 	dir := filepath.Join(s.output, ps[0].ID)
@@ -82,7 +83,17 @@ func TestAutoTraceNeedsNoKey(t *testing.T) {
 		t.Error("the same drawing traced twice must give the same plan.json")
 	}
 
-	b, err := os.ReadFile(filepath.Join(repoRoot, "internal", "plan", "testdata", "office.trace.json"))
+	b, err := os.ReadFile(
+		filepath.Join(
+			repoRoot,
+			"internal",
+			"floorplans",
+			"processing",
+			"plan",
+			"testdata",
+			"office.trace.json",
+		),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +102,10 @@ func TestAutoTraceNeedsNoKey(t *testing.T) {
 		t.Fatal(err)
 	}
 	var img bytes.Buffer
-	if err := png.Encode(&img, synth.Render(&hand, synth.Options{Text: true, Furniture: true})); err != nil {
+	if err := png.Encode(
+		&img,
+		synth.Render(&hand, synth.Options{Text: true, Furniture: true}),
+	); err != nil {
 		t.Fatal(err)
 	}
 	_, first, _ := autoTrace(t, "office.png", img.Bytes())

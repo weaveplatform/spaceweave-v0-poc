@@ -12,7 +12,7 @@ BIN_DIR := bin
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo devel)
 COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null)
 BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS := -s -w -X $(MODULE)/internal/buildinfo.version=$(VERSION) -X $(MODULE)/internal/buildinfo.commit=$(COMMIT) -X $(MODULE)/internal/buildinfo.buildDate=$(BUILD_DATE)
+LDFLAGS := -s -w -X $(MODULE)/internal/platform/buildinfo.version=$(VERSION) -X $(MODULE)/internal/platform/buildinfo.commit=$(COMMIT) -X $(MODULE)/internal/platform/buildinfo.buildDate=$(BUILD_DATE)
 PLATFORMS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 UNIT_PKGS = $(shell GOWORK=off $(GO) list ./... | grep -v /test/acceptance)
 
@@ -41,7 +41,7 @@ vet:
 	$(GO) vet ./...
 
 ## test: unit tests (race, shuffle); coverage to cover/unit
-# The timeout is per package. Under race and coverage, internal/autotrace's
+# The timeout is per package. Under race and coverage, internal/floorplans/processing/autotrace's
 # image tracing takes 5–8 minutes on Windows CI runners, whose speed varies
 # about twofold between runs, so go test's default 10 minutes failed at
 # random there.
@@ -56,7 +56,7 @@ acceptance:
 
 ## eval: the automatic tracer's accuracy on plans drawn from the hand traces, and the golden plan hashes (no -race)
 eval:
-	set -o pipefail; $(GO) test -count=1 -run 'Accuracy|Golden' -v ./internal/autotrace | grep -v '^=== RUN'
+	set -o pipefail; $(GO) test -count=1 -run 'Accuracy|Golden' -v ./internal/floorplans/processing/autotrace | grep -v '^=== RUN'
 
 ## cover: merge every cover/* directory and enforce .testcoverage.yml (>=95% total, >=90% per package)
 cover:
@@ -92,6 +92,6 @@ gate: vet lint test eval acceptance cover vuln build
 
 ## quality: report-only CAD package and raster extraction trials (private CAD needs SPACEWEAVE_DWG_DIR)
 quality:
-	SPACEWEAVE_QUALITY_TRIALS=1 $(GO) test -count=1 -run 'TestQualityTrials|TestRasterTrials' -v ./internal/autotrace ./internal/autotrace/cadfront
+	SPACEWEAVE_QUALITY_TRIALS=1 $(GO) test -count=1 -run 'TestQualityTrials|TestRasterTrials' -v ./internal/floorplans/processing/autotrace ./internal/floorplans/processing/autotrace/cadfront
 
 .PHONY: quality

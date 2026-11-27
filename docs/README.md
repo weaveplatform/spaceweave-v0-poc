@@ -92,9 +92,9 @@ here. Decision records live in `docs/adr/`.
 - [Separate booking ownership from the acting delegate](adr/0008-separate-booking-ownership-from-the-acting-delegate.md):
   retain the booking owner's identity and the delegate's actions.
 
-- [Consider a domain-first modular monolith](adr/0009-use-a-domain-first-modular-monolith.md):
-  proposed architecture direction; the repository-style decision remains pending
-  across all five candidates.
+- [Use a domain-first modular monolith](adr/0009-use-a-domain-first-modular-monolith.md):
+  accepted Option 5; the existing Floorplans module is organised by ownership,
+  with application assembly and portal hosting separated.
 
 - [Keep app-managed delegation local](adr/0010-keep-app-managed-delegation-local.md):
   grant app-mediated booking authority while synchronising booking outcomes.
@@ -164,7 +164,7 @@ here. Decision records live in `docs/adr/`.
   into Attendance reports with separately configured retention.
 
 - [Separate plan approval from operational mapping activation](adr/0030-separate-plan-approval-from-operational-mapping-activation.md):
-  Plans approves assets, Workplace publishes mappings and Booking validates
+  Floorplans approves assets, Workplace publishes mappings and Booking validates
   dated-inventory and commitment impact.
 
 - [Share incident declarations with owning deadline workflows](adr/0031-share-incident-declarations-with-owning-deadline-workflows.md):

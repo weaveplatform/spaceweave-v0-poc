@@ -1,7 +1,8 @@
 # Option 2: Hexagonal architecture: ports and adapters
 
-The repository-architecture decision is pending. This candidate expresses the
-same agreed logical owners as the other four: combined Identity; attendance
+This is a comparison alternative. [Option 5](5-modular-monolith.md) is selected
+by [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md). This candidate
+expresses the same agreed logical owners as the other four: combined Identity; attendance
 planning and claim commitment inside Booking; separate Exchange and Events.
 Its package organisation and dependency rules remain specific to this style.
 [Identity](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
@@ -113,12 +114,12 @@ spaceweave/
 ```
 
 Today's implementation is the floor-plan tool, not a booking
-platform. `internal/server` holds a Chi upload/review server;
-`internal/catalog` stores a filesystem catalogue; `internal/worker` runs local
+platform. `internal/floorplans/adapters/http` holds a Chi upload/review server;
+`internal/floorplans/adapters/localimport/catalog` stores a filesystem catalogue; `internal/floorplans/adapters/jobs` runs local
 conversion/tracing. PostgreSQL, SCIM and booking packages in this proposal do not
-exist today. See the actual [server](../../../internal/server/server.go),
-[catalogue](../../../internal/catalog/catalog.go),
-[worker](../../../internal/worker/worker.go) and
+exist today. See the actual [server](../../../internal/floorplans/adapters/http/server.go),
+[catalogue](../../../internal/floorplans/adapters/localimport/catalog/catalog.go),
+[worker](../../../internal/floorplans/adapters/jobs/worker.go) and
 [current module](../../../go.mod).
 
 ## Full package tree
@@ -301,7 +302,7 @@ spaceweave/
 │   │       │   ├── outbound.go
 │   │       │   ├── acceptance.go
 │   │       │   └── subscriptions.go
-│   │       ├── plans/
+│   │       ├── floorplans/
 │   │       │   ├── plans.go
 │   │       │   ├── processing.go
 │   │       │   ├── review.go
@@ -360,7 +361,7 @@ spaceweave/
 │   │   │   │   │   └── rooms.go
 │   │   │   │   ├── workplace/
 │   │   │   │   │   └── workplace.go
-│   │   │   │   ├── plans/
+│   │   │   │   ├── floorplans/
 │   │   │   │   │   ├── plans.go
 │   │   │   │   │   └── uploads.go
 │   │   │   │   ├── people/
@@ -721,7 +722,7 @@ pretending to coordinate distributed transactions.
 | Policy | revisioned policies, office overrides, publication/effective records | `policy` |
 | Booking | intents/cycles/groups/proposals, dated inventory, claims/holds, waitlist/offers, check-ins, validated operational evidence, room intentions/series/native outcome refs, owner-based cancellation and own protected deadlines | `booking` only |
 | Exchange | mailbox/event mappings, desired/observed revisions, acceptance facts, subscriptions/cursors | `exchange` |
-| Plans | drawing packages, processing attempts, immutable revisions, blob/recovery/publication metadata | `plans` |
+| Floorplans | drawing packages, processing attempts, immutable revisions, blob/recovery/publication metadata | `plans` |
 | Visitors | visitor identities, hosted visits, verified-link grants, reception records | `visitors` |
 | Events | event/audience/capacity, named tickets, admission records, venue association | `events` |
 | Reporting | derived attendance/report projections and separately configured reporting retention | `reporting` |
@@ -977,11 +978,11 @@ and publication. Preserve its drawing fixtures, fuzz cases and renderer checks
 while splitting mixed I/O and rule responsibilities. `core/geometry` contains
 readers/geometry/value transforms; file opening, subprocess validation, provider
 SDKs and catalogue persistence move behind driven ports. The existing
-[converter](../../../internal/convert/convert.go) opens files and writes outputs;
-the [Claude agent](../../../internal/trace/agent.go) embeds a provider client.
+[converter](../../../internal/floorplans/processing/convert/convert.go) opens files and writes outputs;
+the [Claude agent](../../../internal/floorplans/processing/trace/agent.go) embeds a provider client.
 Neither can be copied wholesale into an infrastructure-independent core.
 
-`plans/processing.go` coordinates conversion/tracing as durable leased work;
+`floorplans/processing.go` coordinates conversion/tracing as durable leased work;
 `drawingconvert` uses bounded scratch storage and `tracing/automatic` or
 `tracing/claude` implements the selected engine. Automatic subpackages retain
 their tested algorithms; moving them is a proposed extraction, not a requirement
@@ -1003,7 +1004,7 @@ reconcile orphan uploads and missing copies. There is no transaction across
 PostgreSQL and either blob provider. `blob/verified` wraps the active adapter and
 a deployment-selected recovery destination; selecting Azure versus GCS does not
 require writing every asset to both providers. Published revisions never mutate
-in place. Plans approves immutable assets; Workplace publishes their stable-space
+in place. Floorplans approves immutable assets; Workplace publishes their stable-space
 mappings through `core/service/workplace/mapping.go` and its own driving/store
 ports. Booking validates dated inventory and commitment impact before activation.
 An admin operation may coordinate approval then activation, reporting distinct
@@ -1191,7 +1192,7 @@ separately configured reporting retention. A report or delayed projection never
 authorises release. Personal check-in remains the only transition to taken;
 anonymous occupancy cannot prevent a no-show returning to the pool.
 
-Plans approval identifies an immutable, durable asset. Workplace owns publication
+Floorplans approval identifies an immutable, durable asset. Workplace owns publication
 of geometry-to-stable-space mappings; Booking validates dated inventory and
 confirmed-claim impact before operational activation. A combined administrator
 workflow may complete both steps, but reports approval separately when activation
@@ -1385,21 +1386,21 @@ with their behaviour; introduce working seams before a bulk rename.
 | Current package/path | Proposed location | Required split or retained responsibility |
 | --- | --- | --- |
 | `cmd/spaceweave` | same | Delegate command tree to driving CLI; main handles exit. |
-| `internal/cli` | `adapter/driving/cli` plus `app` | Cobra parsing stays outside core; provider construction/runtime startup moves to composition. |
-| `internal/buildinfo` | same | Version information stays outside core. |
-| `internal/config` | same | Strict deployment config; runtime policy records are new core behaviour. |
-| `internal/server` | `adapter/driving/http/{plans,session}` and root | Keep Chi/upload limits; replace catalogue access with Plans port and add production access/session controls. |
-| `internal/catalog` | `core/model`, `service/plans`, driven persistence | Separate status/review rules from JSON/filesystem locking; replace production catalogue/job authority with PostgreSQL. |
-| `internal/inbox` | `adapter/driving/inbox` | Watch/rescan/settling remain a driver; ingest through Plans port. |
-| `internal/worker` | `adapter/driving/jobs`, `service/plans`, driven tracing/conversion | Separate process polling from processing decisions and file/provider I/O. |
-| `internal/trace` | `adapter/driven/tracing/claude` plus core drawing values | Provider SDK/options/transcripts stay outside; no Anthropic type in core ports. |
-| `internal/autotrace` | `adapter/driven/tracing/automatic` | Adapt its current shared trace contracts; retain automatic pipeline behaviour. |
-| `internal/autotrace/{cadfront,rasterfront,score,synth}` | corresponding `automatic` subpackages | Preserve tested geometry algorithms and fixtures; inward references use core geometry. |
-| `internal/autotrace/profile` | `core/geometry/profile` and `adapter/driven/profilefiles` | Pure layer/profile values split from filesystem library. |
+| `internal/app/cli` | `adapter/driving/cli` plus `app` | Cobra parsing stays outside core; provider construction/runtime startup moves to composition. |
+| `internal/platform/buildinfo` | same | Version information stays outside core. |
+| `internal/app/config` | same | Strict deployment config; runtime policy records are new core behaviour. |
+| `internal/floorplans/adapters/http` | `adapter/driving/http/{plans,session}` and root | Keep Chi/upload limits; replace catalogue access with Floorplans port and add production access/session controls. |
+| `internal/floorplans/adapters/localimport/catalog` | `core/model`, `service/plans`, driven persistence | Separate status/review rules from JSON/filesystem locking; replace production catalogue/job authority with PostgreSQL. |
+| `internal/floorplans/adapters/inbox` | `adapter/driving/inbox` | Watch/rescan/settling remain a driver; ingest through Floorplans port. |
+| `internal/floorplans/adapters/jobs` | `adapter/driving/jobs`, `service/plans`, driven tracing/conversion | Separate process polling from processing decisions and file/provider I/O. |
+| `internal/floorplans/processing/trace` | `adapter/driven/tracing/claude` plus core drawing values | Provider SDK/options/transcripts stay outside; no Anthropic type in core ports. |
+| `internal/floorplans/processing/autotrace` | `adapter/driven/tracing/automatic` | Adapt its current shared trace contracts; retain automatic pipeline behaviour. |
+| `internal/floorplans/processing/autotrace/{cadfront,rasterfront,score,synth}` | corresponding `automatic` subpackages | Preserve tested geometry algorithms and fixtures; inward references use core geometry. |
+| `internal/floorplans/processing/autotrace/profile` | `core/geometry/profile` and `adapter/driven/profilefiles` | Pure layer/profile values split from filesystem library. |
 | `internal/{cad,dwg,dxf,floorgraph,raster,svgdraw,vector}` | corresponding `core/geometry` packages | Keep parsers/transforms; peel off incidental file/provider access before moving. |
-| `internal/plan` | `core/geometry/plan` and `adapter/driven/nodevalidator` | Plan values/conversion/validation rules versus external Node execution. |
-| `internal/convert` | `adapter/driven/drawingconvert` | File/temp/output handling stays driven; reuse core CAD primitives. |
-| `internal/fakeclaude` | `adapter/driven/fakeclaude` | Test-only adapter, no runtime import. |
+| `internal/floorplans/processing/plan` | `core/geometry/plan` and `adapter/driven/nodevalidator` | Plan values/conversion/validation rules versus external Node execution. |
+| `internal/floorplans/processing/convert` | `adapter/driven/drawingconvert` | File/temp/output handling stays driven; reuse core CAD primitives. |
+| `internal/floorplans/adapters/fakeclaude` | `adapter/driven/fakeclaude` | Test-only adapter, no runtime import. |
 | `internal/{dwg/dwgtest,dxf/dxftest}` | adjacent geometry test helpers | Retain fixture builders as needed; omitted from representative count. |
 | `web/floorplan-iso` | retained, wrapped by shared renderer | Incremental React adoption, preserve DOM ownership and rendering evidence. |
 | `test/acceptance` | retained and expanded | Existing drawing checks survive; real booking/provider/recovery suites are additions. |

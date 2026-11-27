@@ -54,15 +54,15 @@ Distribution License 1.0; see its THIRD_PARTY_LICENSES file.
 References
 -------------------------------------------------------------------------------
 
-The DXF and SVG readers (internal/dxf, internal/svgdraw, internal/cad) were
+The DXF and SVG readers (internal/floorplans/processing/dxf, internal/floorplans/processing/svgdraw, internal/floorplans/processing/cad) were
 written from these public specifications. No code was copied from them.
 
 - Autodesk, "DXF Reference" (AutoCAD 2012 and later editions).
 - W3C, "Scalable Vector Graphics (SVG) 1.1 (Second Edition)", in particular
   Appendix F.6, which gives the elliptical arc conversion used in
-  internal/svgdraw/path.go.
+  internal/floorplans/processing/svgdraw/path.go.
 
-The DWG reader (internal/dwg) was written from the Open Design Alliance's
+The DWG reader (internal/floorplans/processing/dwg) was written from the Open Design Alliance's
 "Open Design Specification for .dwg files". ACadSharp
 (github.com/DomCR/ACadSharp) was consulted as a cross-check, and a few
 details the specification leaves out follow it; each file that does says so:

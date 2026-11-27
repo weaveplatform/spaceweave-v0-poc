@@ -5,7 +5,7 @@
 //   node tools/export-json.mjs js/plans/roomsketcher-office.js > /tmp/office.json
 //
 // The output is the fixture that shows a JSON plan and its module render alike,
-// and the reference internal/plan's conversion is tested against.
+// and the reference internal/floorplans/processing/plan's conversion is tested against.
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 

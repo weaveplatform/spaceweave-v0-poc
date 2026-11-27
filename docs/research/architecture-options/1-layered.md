@@ -1,7 +1,8 @@
 # Option 1: Layered architecture
 
-The repository-architecture decision is pending. This candidate expresses the
-same agreed logical owners as the other four: combined Identity; attendance
+This is a comparison alternative. [Option 5](5-modular-monolith.md) is selected
+by [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md). This candidate
+expresses the same agreed logical owners as the other four: combined Identity; attendance
 planning and claim commitment inside Booking; separate Exchange and Events.
 Its package organisation and dependency rules remain specific to this style.
 [Identity](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
@@ -57,7 +58,7 @@ Dependency rules:
 3. Application imports model/support and persistence interface roots, never
    transport, generated API packages, concrete provider/storage packages or app.
 4. Transport imports application/model/support, never storage/provider packages.
-   Asset reads pass through Plans so authorisation has one application owner.
+   Asset reads pass through Floorplans so authorisation has one application owner.
 5. App constructs concrete dependencies and registers job handlers. Only cmd and
    app import app; cmd remains an entry point, not a second composition root.
 6. Public `pkg` packages import neither internal nor cmd. Generated clients may
@@ -121,9 +122,9 @@ internal/
 │   ├── telemetry.go                  SDK lifecycle and JSON logging wiring
 │   └── recovery.go                   writer epoch and recovery-readiness startup checks
 ├── config/
-│   └── config.go                     strict deployment YAML and precedence ← internal/config
+│   └── config.go                     strict deployment YAML and precedence ← internal/app/config
 ├── buildinfo/
-│   └── buildinfo.go                  stamped release identity ← internal/buildinfo
+│   └── buildinfo.go                  stamped release identity ← internal/platform/buildinfo
 ├── archtest/
 │   ├── imports_test.go               layer and application-call allowlists
 │   └── ownership_test.go             store facet/SQL/migration ownership checks
@@ -152,38 +153,38 @@ internal/
 │   ├── officecalendar/
 │   │   └── calendar.go               timezone, working-window and closure arithmetic
 │   ├── plan/
-│   │   ├── trace.go                  drawing/trace schema ← internal/plan
+│   │   ├── trace.go                  drawing/trace schema ← internal/floorplans/processing/plan
 │   │   └── validate.go               geometric validation and conversion checks
 │   ├── convert/
-│   │   ├── convert.go                format dispatch ← internal/convert
+│   │   ├── convert.go                format dispatch ← internal/floorplans/processing/convert
 │   │   └── formats.go                image/DXF/DWG/SVG content eligibility
 │   ├── cad/
-│   │   ├── cad.go                    common CAD representation ← internal/cad
+│   │   ├── cad.go                    common CAD representation ← internal/floorplans/processing/cad
 │   │   └── draw.go                   drawing interpretation/render geometry
 │   ├── dxf/
-│   │   ├── dxf.go                    DXF reader ← internal/dxf
+│   │   ├── dxf.go                    DXF reader ← internal/floorplans/processing/dxf
 │   │   ├── entities.go               entity decoding and units
 │   │   └── dxftest/
 │   │       └── dxftest.go            synthetic drawing fixture builder
 │   ├── dwg/
-│   │   ├── dwg.go                    DWG reader ← internal/dwg
+│   │   ├── dwg.go                    DWG reader ← internal/floorplans/processing/dwg
 │   │   ├── entities.go               supported binary drawing entities
 │   │   └── dwgtest/
 │   │       └── dwg.go                binary drawing fixture builder
 │   ├── svgdraw/
-│   │   ├── svgdraw.go                SVG drawing interpretation ← internal/svgdraw
+│   │   ├── svgdraw.go                SVG drawing interpretation ← internal/floorplans/processing/svgdraw
 │   │   └── path.go                   vector paths and transforms
 │   ├── vector/
-│   │   ├── vector.go                 drawing representation ← internal/vector
+│   │   ├── vector.go                 drawing representation ← internal/floorplans/processing/vector
 │   │   └── svg.go                    SVG output
 │   ├── raster/
-│   │   ├── raster.go                 raster loading/analysis ← internal/raster
+│   │   ├── raster.go                 raster loading/analysis ← internal/floorplans/processing/raster
 │   │   └── overlay.go                tracing/debug overlays
 │   ├── floorgraph/
-│   │   ├── graph.go                  wall graph ← internal/floorgraph
+│   │   ├── graph.go                  wall graph ← internal/floorplans/processing/floorgraph
 │   │   └── spaces.go                 rooms, openings and space topology
 │   ├── autotrace/
-│   │   ├── autotrace.go              deterministic tracing ← internal/autotrace
+│   │   ├── autotrace.go              deterministic tracing ← internal/floorplans/processing/autotrace
 │   │   ├── cadfront/
 │   │   │   ├── cadfront.go           structured drawing extraction
 │   │   │   └── layers.go             role-aware layer interpretation
@@ -191,7 +192,7 @@ internal/
 │   │   │   ├── rasterfront.go        image wall/opening extraction
 │   │   │   └── walls.go              raster evidence processing
 │   │   ├── profile/
-│   │   │   ├── profile.go            profile values ← internal/autotrace/profile
+│   │   │   ├── profile.go            profile values ← internal/floorplans/processing/autotrace/profile
 │   │   │   └── words.go              pure built-in role/name matching
 │   │   ├── score/
 │   │   │   └── score.go              tracing evaluation helpers
@@ -201,7 +202,7 @@ internal/
 │       └── fault.go                  controlled failures used by contract suites
 ├── transport/
 │   ├── http/
-│   │   ├── server.go                 Chi routes and request limits ← internal/server
+│   │   ├── server.go                 Chi routes and request limits ← internal/floorplans/adapters/http
 │   │   ├── middleware.go             request/trace IDs, recovery and security headers
 │   │   ├── session.go                cookie/CSRF extraction; call Access
 │   │   ├── gen/
@@ -220,7 +221,7 @@ internal/
 │   │   │   ├── policy.go             versioned policy publication
 │   │   │   ├── reception.go          host/visit arrival and departure
 │   │   │   └── reporting.go          office-scoped reports and handover tasks
-│   │   ├── plans/
+│   │   ├── floorplans/
 │   │   │   ├── upload.go             bounded multipart validation ← server upload/files
 │   │   │   ├── review.go             approve/reject/retry/retrace ← server review
 │   │   │   └── profiles.go           layer-profile corrections ← server profiles
@@ -239,14 +240,14 @@ internal/
 │   │   └── static/
 │   │       └── portals.go            staff/admin builds and renderer assets
 │   ├── cli/
-│   │   ├── root.go                   Cobra commands ← internal/cli command half
+│   │   ├── root.go                   Cobra commands ← internal/app/cli command half
 │   │   ├── plans.go                  one-off conversion/tracing/review operations
 │   │   └── operations.go             migrate, reconcile, retry and recovery inspection
 │   ├── trigger/
 │   │   ├── schedule.go               enqueue due cycles, delta rounds and retention
 │   │   └── outage.go                 authenticated operational incident declarations
 │   ├── inbox/
-│   │   └── inbox.go                  optional local import watcher ← internal/inbox
+│   │   └── inbox.go                  optional local import watcher ← internal/floorplans/adapters/inbox
 │   └── jobs/
 │       └── dispatch.go               decode/version job envelope; invoke registered handler
 ├── application/
@@ -310,9 +311,9 @@ internal/
 │   │   ├── acceptance.go             associate responses with current request/hold revision
 │   │   ├── delta.go                  calendar/window cursor rounds and resynchronisation
 │   │   └── subscriptions.go          renew subscriptions and process lifecycle recovery
-│   ├── plans/
+│   ├── floorplans/
 │   │   ├── ingest.go                 drawing package deduplication and revision identity
-│   │   ├── process.go                conversion/tracing workflow ← internal/worker
+│   │   ├── process.go                conversion/tracing workflow ← internal/floorplans/adapters/jobs
 │   │   ├── review.go                 approve/reject/retry/retrace application decisions
 │   │   ├── profiles.go               version corrections and enqueue affected retraces
 │   │   └── publish.go                recovery-verified immutable asset publication
@@ -392,7 +393,7 @@ internal/
     │   │       ├── 0004_policy.sql    Policy revisions and publications
     │   │       ├── 0005_booking.sql   Booking claims/planning/room series/use/cancellation
     │   │       ├── 0006_exchange.sql  Exchange mappings/observations/cursors
-    │   │       ├── 0007_plans.sql     Plans revisions and recovery metadata
+    │   │       ├── 0007_plans.sql     Floorplans revisions and recovery metadata
     │   │       ├── 0008_visitors.sql  Visitors/visits and reception state
     │   │       ├── 0009_events.sql    Events/tickets/admissions
     │   │       ├── 0010_reporting.sql Reporting projections and purge progress
@@ -434,9 +435,9 @@ internal/
     ├── tracing/
     │   ├── tracing.go                optional tracing-agent interface
     │   ├── claude/
-    │   │   └── agent.go              external-agent loop ← internal/trace
+    │   │   └── agent.go              external-agent loop ← internal/floorplans/processing/trace
     │   └── fakeclaude/
-    │       └── fakeclaude.go          acceptance provider ← internal/fakeclaude
+    │       └── fakeclaude.go          acceptance provider ← internal/floorplans/adapters/fakeclaude
     ├── scratch/
     │   └── files.go                  bounded local processing workspace; never durable truth
     ├── profilefiles/
@@ -606,7 +607,7 @@ job claiming, not the inventory query deciding who can book.
 | Workplace | baseline definitions, calendars, lifecycle schedules and active geometry mappings | workplace SQL and definition/mapping tables |
 | Identity | canonical IDs/source facts, SCIM, sessions, capabilities and delegation | Identity-owned people/access facets and migration files under the shared SQL layer |
 | Exchange | correspondence, provider observations, progress | exchange SQL and mapping/cursor/subscription tables |
-| Plans | drawing packages, processing/review/publication | plans SQL and asset/revision/profile tables |
+| Floorplans | drawing packages, processing/review/publication | plans SQL and asset/revision/profile tables |
 | Visitors / Events | visits/reception / event/tickets/admission | visitors SQL / events SQL, respectively |
 | Reporting / Notifications | derived projections/report retention / preferences/delivery | reporting SQL / notifications SQL, respectively |
 | Operational facilities | confirmed incident declarations, scope/times/revisions and guarded reads | operations/incidents service and incidents SQL; no business deadline writers |
@@ -764,16 +765,16 @@ Publish only a committed linked ticket. Retry identities prevent duplicates;
 conditional admission checks the venue-recovery pause and allows one successful scan. Reception remains separate;
 verified-email access reveals only relevant visit/event actions.
 
-### Plans: evolve the current pipeline without losing it
+### Floorplans: evolve the current pipeline without losing it
 
-The current [server](../../../internal/server/server.go),
-[catalogue](../../../internal/catalog/catalog.go) and
-[worker](../../../internal/worker/worker.go) implement upload, queue claim,
+The current [server](../../../internal/floorplans/adapters/http/server.go),
+[catalogue](../../../internal/floorplans/adapters/localimport/catalog/catalog.go) and
+[worker](../../../internal/floorplans/adapters/jobs/worker.go) implement upload, queue claim,
 conversion, tracing and approval using local files. Catalogue lock files and
 startup recovery are useful local-tool behaviour; they are not distributed
 Kubernetes leases or the production booking store.
 
-Move catalogue decisions into model/application Plans and production claims into
+Move catalogue decisions into model/application Floorplans and production claims into
 PostgreSQL/jobs, preserving hashes, attachments, profiles, review states, progress
 and retry/retrace. Inbox, HTTP and CLI share one ingest operation.
 
@@ -787,7 +788,7 @@ a directory rename.
 Tracing stages bytes in bounded scratch space, checks lease/revision on progress,
 writes immutable objects and verifies recovery copies before durable/publication
 acknowledgement. PostgreSQL holds IDs, hashes, status and current pointers.
-Plans approval advances asset pointers without overwriting referenced history.
+Floorplans approval advances asset pointers without overwriting referenced history.
 Workplace publishes the reviewed geometry-to-stable-space mapping through
 `application/workplace/mapping.go`, after Booking validates dated-inventory and
 commitment impact. `application/operations/workplace.go` can coordinate approval
@@ -967,7 +968,7 @@ separately configured reporting retention. A report or delayed projection never
 authorises release. Personal check-in remains the only transition to taken;
 anonymous occupancy cannot prevent a no-show returning to the pool.
 
-Plans approval identifies an immutable, durable asset. Workplace owns publication
+Floorplans approval identifies an immutable, durable asset. Workplace owns publication
 of geometry-to-stable-space mappings; Booking validates dated inventory and
 confirmed-claim impact before operational activation. A combined administrator
 workflow may complete both steps, but reports approval separately when activation
@@ -1155,30 +1156,30 @@ platform already exists. The current inventory contains 26 Go packages under
 | Current package/path | Candidate destination | Split or preservation |
 | --- | --- | --- |
 | cmd/spaceweave | cmd/spaceweave | thin main preserved |
-| internal/cli | transport/cli + app | Cobra presentation versus current inline composition |
-| internal/config | config | strict YAML; move profile values away from I/O dependency |
-| internal/buildinfo | buildinfo | unchanged responsibility |
-| internal/server | transport/http, plans, static | upload/review/profile routing; application decisions move to Plans |
-| internal/catalog | model/plans + application/plans + store/postgres | local filesystem catalogue/locks replaced for production durability |
-| internal/worker | application/plans + transport/jobs | workflow versus polling/dispatch; replace claiming with durable leases |
-| internal/inbox | transport/inbox | watcher invokes shared ingest; local input remains optional |
-| internal/trace | persistence/tracing/claude + provider-free model/support types | isolate SDK loop; retain trace/prompt/tool behaviour |
-| internal/fakeclaude | persistence/tracing/fakeclaude | keep acceptance fixture capability |
-| internal/plan | support/plan | schema/geometry validation; remove provider/workflow dependencies |
-| internal/convert | support/convert | conversion algorithms retained |
-| internal/cad | support/cad | retained |
-| internal/dxf, internal/dxf/dxftest | support/dxf, support/dxf/dxftest | readers and fixtures retained |
-| internal/dwg, internal/dwg/dwgtest | support/dwg, support/dwg/dwgtest | readers and fixtures retained |
-| internal/svgdraw | support/svgdraw | retained |
-| internal/vector | support/vector | retained |
-| internal/raster | support/raster | retained |
-| internal/floorgraph | support/floorgraph | retained |
-| internal/autotrace | support/autotrace | deterministic orchestration; invert current trace-package value dependency |
-| internal/autotrace/cadfront | support/autotrace/cadfront | retained extraction |
-| internal/autotrace/rasterfront | support/autotrace/rasterfront | retained extraction |
-| internal/autotrace/profile | support/autotrace/profile + persistence/profilefiles + application/plans | values/matching versus filesystem library versus correction workflow |
-| internal/autotrace/score | support/autotrace/score | retained evaluation helpers |
-| internal/autotrace/synth | support/autotrace/synth | retained fixtures |
+| internal/app/cli | transport/cli + app | Cobra presentation versus current inline composition |
+| internal/app/config | config | strict YAML; move profile values away from I/O dependency |
+| internal/platform/buildinfo | buildinfo | unchanged responsibility |
+| internal/floorplans/adapters/http | transport/http, plans, static | upload/review/profile routing; application decisions move to Floorplans |
+| internal/floorplans/adapters/localimport/catalog | model/plans + application/plans + store/postgres | local filesystem catalogue/locks replaced for production durability |
+| internal/floorplans/adapters/jobs | application/plans + transport/jobs | workflow versus polling/dispatch; replace claiming with durable leases |
+| internal/floorplans/adapters/inbox | transport/inbox | watcher invokes shared ingest; local input remains optional |
+| internal/floorplans/processing/trace | persistence/tracing/claude + provider-free model/support types | isolate SDK loop; retain trace/prompt/tool behaviour |
+| internal/floorplans/adapters/fakeclaude | persistence/tracing/fakeclaude | keep acceptance fixture capability |
+| internal/floorplans/processing/plan | support/plan | schema/geometry validation; remove provider/workflow dependencies |
+| internal/floorplans/processing/convert | support/convert | conversion algorithms retained |
+| internal/floorplans/processing/cad | support/cad | retained |
+| internal/floorplans/processing/dxf, internal/floorplans/processing/dxf/dxftest | support/dxf, support/dxf/dxftest | readers and fixtures retained |
+| internal/floorplans/processing/dwg, internal/floorplans/processing/dwg/dwgtest | support/dwg, support/dwg/dwgtest | readers and fixtures retained |
+| internal/floorplans/processing/svgdraw | support/svgdraw | retained |
+| internal/floorplans/processing/vector | support/vector | retained |
+| internal/floorplans/processing/raster | support/raster | retained |
+| internal/floorplans/processing/floorgraph | support/floorgraph | retained |
+| internal/floorplans/processing/autotrace | support/autotrace | deterministic orchestration; invert current trace-package value dependency |
+| internal/floorplans/processing/autotrace/cadfront | support/autotrace/cadfront | retained extraction |
+| internal/floorplans/processing/autotrace/rasterfront | support/autotrace/rasterfront | retained extraction |
+| internal/floorplans/processing/autotrace/profile | support/autotrace/profile + persistence/profilefiles + application/plans | values/matching versus filesystem library versus correction workflow |
+| internal/floorplans/processing/autotrace/score | support/autotrace/score | retained evaluation helpers |
+| internal/floorplans/processing/autotrace/synth | support/autotrace/synth | retained fixtures |
 | web/floorplan-iso | retained renderer + web/shared/renderer bridge | native JS/D3 used incrementally from React portals |
 | test/acceptance | test/acceptance | preserve deterministic/fake-provider plan journeys; add durable booking slices |
 | pkg/README.md | pkg/client plus existing guidance | no current public domain API to relocate |
@@ -1242,7 +1243,7 @@ adapters increase coverage obligations even when they contain few lines.
 - **Support libraries are substantial.** The existing CAD pipeline stays useful,
   but removing provider/config/I/O dependencies is real work. Pure geometry and
   local scratch processing must not regain catalogue or booking authority.
-- **Transport has no persistence exception.** Plans mediates signed/private asset
+- **Transport has no persistence exception.** Floorplans mediates signed/private asset
   retrieval and authorisation. This centralises access rules at the cost of
   additional application methods for streaming and asset retrieval.
 - **Provider truth stays outside local transactions.** Local constraints cannot

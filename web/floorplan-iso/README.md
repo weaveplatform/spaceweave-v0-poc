@@ -1,5 +1,10 @@
 # Spaceweave floor plan workspace
 
+The Go backend for this workspace is the Floorplans module under
+`internal/floorplans`, following the selected
+[modular-monolith layout](../../docs/adr/0009-use-a-domain-first-modular-monolith.md).
+The viewer remains native JavaScript/D3 with no build step.
+
 A static viewer and review workspace for floor plans traced into interactive
 3D models. Imported floors appear in the header; four hand-traced examples
 are available separately under **Examples**. `?plan=` links directly to a floor.

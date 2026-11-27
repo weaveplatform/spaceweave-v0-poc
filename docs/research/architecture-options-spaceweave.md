@@ -54,12 +54,13 @@ They can be combined; the candidate layouts make different combinations concrete
 | DDD | Explicit language, context boundaries and aggregate behaviour. | Aggregate/context splits may conflict with atomic group, parking and venue/ticket requirements unless coordination is designed. |
 | Modular monolith | Business ownership and local consistency align with package navigation and migration custody. | A large Booking module and permitted cross-module transactions create coupling that needs active control. |
 
-The repository-architecture decision remains pending. A domain-oriented modular
-monolith with inner ports/adapters is the preferred candidate, not a selected
-implementation. All five layouts now use the same agreed logical ownership:
+Option 5, a domain-oriented modular monolith with inner ports/adapters, is
+selected. The existing Floorplans module and application assembly follow that
+organisation; the wider booking platform remains future implementation work.
+All five comparison layouts use the same agreed logical ownership:
 combined Identity; attendance planning and capacity commitment inside Booking;
 separate Exchange; Booking-owned operational occupancy evidence with Attendance
-reporting projections; Plans asset approval distinct from Workplace mapping
+reporting projections; Floorplans asset approval distinct from Workplace mapping
 activation; and Events-owned registration/tickets/admission. Events and
 Booking coordinate venue/ticket consistency through owning interfaces in one
 local transaction where required. Architecture style changes the package,
@@ -69,7 +70,7 @@ office-local effective point; validated reactivation retains identity/history.
 Unconfirmed holds/offers revalidate at confirmation and cannot confirm excluded
 use. Shared operational facilities retain outage declarations; Booking and Events
 apply the declared scope to their own deadlines, with rules owned by Policy.
-[Proposed architecture decision](../adr/0009-use-a-domain-first-modular-monolith.md),
+[Accepted architecture decision](../adr/0009-use-a-domain-first-modular-monolith.md),
 [five candidate layouts](architecture-options/README.md).
 
 Native Exchange room policy/check-in/autorelease governs both entry channels;

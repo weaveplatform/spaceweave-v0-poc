@@ -7,25 +7,54 @@ capabilities and proposed implementation boundaries. The [scope](../README.md#pr
 
 The [architecture blueprint](architecture-blueprint.md) records agreed logical owners;
 the [five-option comparison](research/architecture-options/README.md) evaluates
-alternative layouts against the same workflows. The repository-architecture choice remains pending; concrete package placement
-and publication-guard mechanics remain under review. [Architecture foundations](research/architecture-options/architecture-foundations.md)
+alternative layouts against the same workflows. [Option 5](research/architecture-options/5-modular-monolith.md),
+a domain-first modular monolith, is selected. The existing Floorplans module
+follows that layout; future publication and recovery protocols remain under review. [Architecture foundations](research/architecture-options/architecture-foundations.md)
 and the [API research](research/api-surfaces/README.md) provide primary-source
 technical guidance and design tradeoffs.
 
 ## Existing application
 
-- One Go executable exposes the CLI, Chi HTTP routes, tracing workers and static
-  floor-plan microsite. See [CLI](../internal/cli/cli.go) and
-  [HTTP routing](../internal/server/server.go).
-- Plans, uploads and the catalogue use local files. Catalogue locking and job
-  claiming are implemented in [catalogue](../internal/catalog/catalog.go), with
-  polling workers in [worker](../internal/worker/worker.go).
-- The floor-plan frontend uses native JavaScript modules, SVG and D3, with no
-  frontend build step. See its [README](../web/floorplan-iso/README.md).
-- Staff authentication, office-scoped authorisation, booking persistence, distributed
-  job execution and deployment infrastructure are new design work.
-- Repository conventions retain Chi, Cobra, strict YAML configuration, the
-  existing package layout and correctness gates. See [CLAUDE.md](../CLAUDE.md).
+The current implementation is the Floorplans module of the selected modular
+monolith. It imports drawings, traces and validates models, publishes drafts,
+and supports review through the existing CLI and JavaScript/D3 workbench.
+
+```text
+internal/
+├── app/
+│   ├── cli/                     Cobra commands and presentation
+│   ├── config/                  strict deployment YAML and environment settings
+│   └── router.go                module HTTP and portal assembly
+├── floorplans/
+│   ├── module.go                import, tracing and review runtime assembly
+│   ├── api/                     published DTOs and Service operations
+│   ├── core/                    transition and review policies
+│   ├── processing/              existing CAD, raster, tracing and validation packages
+│   └── adapters/
+│       ├── http/                upload, attachment, profile and review routes
+│       ├── jobs/                local processing workers
+│       ├── inbox/               local input watcher
+│       ├── localimport/catalog/ file-backed catalogue and output directory
+│       └── fakeclaude/          test provider for the optional tracer
+├── gateway/portal/              static assets, host restrictions and cache policy
+├── platform/buildinfo/          release metadata
+└── layout/                      dependency and ownership import checks
+```
+
+- One Go executable exposes the [CLI](../internal/app/cli/cli.go),
+  [Floorplans runtime](../internal/floorplans/module.go),
+  [HTTP adapter](../internal/floorplans/adapters/http/server.go) and
+  [portal gateway](../internal/gateway/portal/portal.go).
+- Uploads, generated assets, saved layer profiles and the catalogue still use
+  local files. [Catalogue](../internal/floorplans/adapters/localimport/catalog/catalog.go)
+  locking and [worker](../internal/floorplans/adapters/jobs/worker.go) polling are
+  preserved local mechanisms, not PostgreSQL transactions or distributed leases.
+- The frontend remains native JavaScript, SVG and D3 with no build step. See its
+  [README](../web/floorplan-iso/README.md). Docker Compose runs the same workbench.
+- Staff identity, office-scoped authorisation, booking, PostgreSQL/cloud durability,
+  distributed jobs and React portals remain future implementation work.
+- Chi, Cobra, strict YAML, CLI flags, HTTP paths, catalogue/artifact shapes and
+  correctness gates remain in force. See [CLAUDE.md](../CLAUDE.md).
 
 ## Design tree
 
@@ -66,12 +95,11 @@ technical guidance and design tradeoffs.
   - Established: retain Golang.
   - Research compares the five reference layouts: layered, hexagonal, clean,
     DDD and modular monolith, applied to SpaceWeave.
-  - Pending: choose among layered, hexagonal, Clean, DDD and modular-monolith
-    repository architectures. A domain-first modular monolith is the preferred
-    candidate; the
+  - Established: use the domain-first modular monolith from Option 5. The existing
+    code is organised under Floorplans, app, gateway and platform; the
     [research comparison](research/architecture-options-spaceweave.md) and
-    [proposed architecture decision](adr/0009-use-a-domain-first-modular-monolith.md)
-    record the reasoning.
+    [accepted architecture decision](adr/0009-use-a-domain-first-modular-monolith.md)
+    record the reasoning and tradeoffs.
   - Established: Booking owns local space availability and booking transitions;
     other modules use its interface.
   - Established: Workplace owns location/space definitions and baseline
@@ -85,7 +113,7 @@ technical guidance and design tradeoffs.
     applies transitions through Booking. These owners apply across all five layouts.
   - Established: Booking owns validated operational occupancy evidence used for
     release; Attendance projects committed facts with separate reporting retention.
-    Plans approves immutable assets; Workplace publishes geometry-to-stable-space
+    Floorplans approves immutable assets; Workplace publishes geometry-to-stable-space
     mappings after Booking validates dated inventory and commitment impact.
   - Established: shared operational facilities own confirmed outage declarations
     with affected offices/actions/times. Booking and Events own deadline effects;
@@ -336,7 +364,7 @@ settles that ownership boundary and its narrow capacity transaction. The design
 also preserves [atomic visitor registration](adr/0024-create-event-visitor-visits-with-tickets-atomically.md)
 and the agreed organiser-controlled venue recovery, retaining tickets while
 admission and issuance are paused. Remaining architectural work includes the
-pending repository-architecture choice, concrete incident-ordering protocols,
+concrete incident-ordering protocols,
 concrete evidence/activation protocols, operation schemas, provider deployment
 permissions, load-validated limits and recovery
 validation. The [event workflow contract](research/api-surfaces/event-workflows.md)

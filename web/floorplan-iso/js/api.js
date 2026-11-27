@@ -1,8 +1,8 @@
 // Client for the API that `spaceweave serve` adds to the site
-// (internal/server). Under a plain static server such as tools/serve.py,
+// (internal/floorplans/adapters/http). Under a plain static server such as tools/serve.py,
 // info() fails and the page leaves uploads out.
 
-// Must match RequestHeader in internal/server. A page on another origin
+// Must match RequestHeader in internal/floorplans/adapters/http. A page on another origin
 // can't send it without a CORS preflight, which the server never approves.
 export const REQUEST_HEADER = 'X-Spaceweave';
 

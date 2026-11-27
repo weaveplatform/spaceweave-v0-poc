@@ -20,10 +20,11 @@ and relevant technology principles without requiring prior design discussions.
 3. [Five detailed candidates](architecture-options/README.md): repository layouts,
    dependency rules, state ownership, transactions, migration and common workflows.
 
-The repository-architecture choice is pending. A modular monolith remains the
-preferred candidate; agreed logical owners apply across all five layouts, while
-concrete package placement remains subject to validation; a candidate tree illustrates an option,
-rather than proving its correctness or performance.
+[Option 5: Modular monolith](architecture-options/5-modular-monolith.md) is selected
+by [ADR 0009](../adr/0009-use-a-domain-first-modular-monolith.md). The existing
+Floorplans module and application assembly follow that layout. The other options
+remain comparison records; full-capability trees include future implementation
+work and do not prove correctness or performance.
 
 ## Allocation research
 

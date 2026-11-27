@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/weaveplatform/spaceweave/internal/catalog"
-	"github.com/weaveplatform/spaceweave/internal/convert"
-	"github.com/weaveplatform/spaceweave/internal/dwg/dwgtest"
-	"github.com/weaveplatform/spaceweave/internal/dxf/dxftest"
-	"github.com/weaveplatform/spaceweave/internal/server"
+	server "github.com/weaveplatform/spaceweave/internal/floorplans/adapters/http"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/localimport/catalog"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/convert"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dwg/dwgtest"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dxf/dxftest"
 )
 
 // serving is `spaceweave serve` running on a site, stopped (by interrupt,
@@ -36,7 +36,13 @@ func serve(t *testing.T, s *site) *serving {
 		t.Skip("stopping the server needs an interrupt signal")
 	}
 	log := &lockedBuffer{}
-	cmd := s.command("serve", "--addr", "127.0.0.1:0", "--site", filepath.Join(repoRoot, "web", "floorplan-iso"))
+	cmd := s.command(
+		"serve",
+		"--addr",
+		"127.0.0.1:0",
+		"--site",
+		filepath.Join(repoRoot, "web", "floorplan-iso"),
+	)
 	cmd.Stdout, cmd.Stderr = log, log
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
@@ -75,7 +81,12 @@ func (v *serving) upload(t *testing.T, name string, data []byte) (int, string) {
 	}
 	_, _ = fw.Write(data)
 	_ = mw.Close()
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, v.base+"/api/plans", &body)
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		v.base+"/api/plans",
+		&body,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +184,10 @@ func TestDWGUploadRefusesR2007(t *testing.T) {
 	v := serve(t, newAutoSite(t))
 	code, body := v.upload(t, "old.dwg", []byte("AC1021\x00\x00\x00\x00\x00\x06\x01"))
 	if code != http.StatusUnsupportedMediaType ||
-		!strings.Contains(body, "This DWG is AutoCAD 2007 format, which isn't supported. Save it as DWG 2018 or 2013, or as DXF.") {
+		!strings.Contains(
+			body,
+			"This DWG is AutoCAD 2007 format, which isn't supported. Save it as DWG 2018 or 2013, or as DXF.",
+		) {
 		t.Fatalf("%d %s", code, body)
 	}
 }

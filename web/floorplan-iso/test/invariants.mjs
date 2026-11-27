@@ -17,7 +17,7 @@ export const KINDS = new Set(['room', 'zone']);
 // centimetres off, so the larger of a quarter of a square metre (half the
 // smallest room allowed, so a whole room can't hide in it) and 0.5% of the
 // smaller polygon. The hand-traced suites and corporate floors have slips of
-// 0.09 and 0.13 m². internal/floorgraph's siteCheck uses the same numbers.
+// 0.09 and 0.13 m². internal/floorplans/processing/floorgraph's siteCheck uses the same numbers.
 export const OVERLAP_SLACK = { area: 0.25, share: 0.005 };
 const REQUIRED = ['SOURCE', 'WIDTH', 'DEPTH', 'ENTRANCE', 'THICKNESS', 'walls', 'rooms', 'floorPatches', 'furniture'];
 // Enough for a tracer to fix the pattern without flooding its context.

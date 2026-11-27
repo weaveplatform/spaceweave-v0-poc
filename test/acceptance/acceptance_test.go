@@ -27,10 +27,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/weaveplatform/spaceweave/internal/catalog"
-	"github.com/weaveplatform/spaceweave/internal/dxf/dxftest"
-	"github.com/weaveplatform/spaceweave/internal/fakeclaude"
-	"github.com/weaveplatform/spaceweave/internal/server"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/fakeclaude"
+	server "github.com/weaveplatform/spaceweave/internal/floorplans/adapters/http"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/localimport/catalog"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dxf/dxftest"
 )
 
 var (

@@ -1,17 +1,17 @@
 // The layers panel's logic: what report.json says about a drawing's layers,
 // and how a role chosen for one becomes a rule in the client's profile
-// (internal/autotrace/profile). Pure, so node can test it; workbench.js
+// (internal/floorplans/processing/autotrace/profile). Pure, so node can test it; workbench.js
 // draws it.
 
 // A profile's name is a file name on the server: it must match validName
-// in internal/autotrace/profile/library.go.
+// in internal/floorplans/processing/autotrace/profile/library.go.
 export const PROFILE_NAME = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 // Built-in profiles can't be saved over (profile.BuiltinNames).
 export const BUILTIN_PROFILES = ['uniclass', 'aia', 'cafm', 'generic'];
 
 // A glob matching exactly one layer name. It must agree with EscapeGlob in
-// internal/autotrace/profile/profile.go: a layer called "A*" would
+// internal/floorplans/processing/autotrace/profile/profile.go: a layer called "A*" would
 // otherwise give every layer starting with A the role.
 export function escapeGlob(name) {
   return name.replace(/[*?\\]/g, (c) => `\\${c}`);

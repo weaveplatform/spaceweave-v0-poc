@@ -14,11 +14,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/weaveplatform/spaceweave/internal/catalog"
-	"github.com/weaveplatform/spaceweave/internal/dxf/dxftest"
-	"github.com/weaveplatform/spaceweave/internal/plan"
-	"github.com/weaveplatform/spaceweave/internal/server"
-	"github.com/weaveplatform/spaceweave/internal/trace"
+	server "github.com/weaveplatform/spaceweave/internal/floorplans/adapters/http"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/adapters/localimport/catalog"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/dxf/dxftest"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/plan"
+	"github.com/weaveplatform/spaceweave/internal/floorplans/processing/trace"
 )
 
 // attach sends a file to a plan's floor package the way the page does.

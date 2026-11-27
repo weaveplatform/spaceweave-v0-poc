@@ -1,7 +1,8 @@
 # Option 4: Domain-driven design
 
-The repository-architecture decision is pending. This candidate expresses the
-same agreed logical owners as the other four: combined Identity; attendance
+This is a comparison alternative. [Option 5](5-modular-monolith.md) is selected
+by [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md). This candidate
+expresses the same agreed logical owners as the other four: combined Identity; attendance
 planning and claim commitment inside Booking; separate Exchange and Events.
 Its package organisation and dependency rules remain specific to this style.
 [Identity](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
@@ -353,7 +354,7 @@ internal/
 │           ├── exchange.go
 │           └── migrations/
 │               └── 0001_exchange.sql
-├── plans/
+├── floorplans/
 │   ├── plans.go
 │   ├── api/
 │   │   └── plans.go                          upload, process, review and read revision
@@ -472,7 +473,7 @@ internal/
 │           ├── notifications.go
 │           └── migrations/
 │               └── 0001_notifications.sql
-├── autotrace/                                retained geometry packages; accessed through Plans
+├── autotrace/                                retained geometry packages; accessed through Floorplans
 ├── cad/
 ├── convert/
 ├── dwg/
@@ -552,7 +553,7 @@ booker have separate fields and meanings.
 
 Workplace owns stable space identity and baseline neighbourhoods. Booking's
 `DatedInventory` represents availability and dated membership adjustments; it
-does not mutate Workplace's baseline definitions during a run. Plans owns
+does not mutate Workplace's baseline definitions during a run. Floorplans owns
 geometry revisions, not desk claims or authoritative space identity. An amended
 drawing can be reviewed before becoming the current plan without moving an
 existing booking to a different inferred polygon.
@@ -754,9 +755,9 @@ Reception arrival/departure and single-use event admission are separate
 transitions. Retention removes aged visit data and identifying projection copies;
 the retained event view cannot quietly restore deleted visitor details.
 
-### Plans, blobs and the existing renderer
+### Floorplans, blobs and the existing renderer
 
-Plans wraps current autotrace/convert/floorgraph and renderer behaviour. Domain
+Floorplans wraps current autotrace/convert/floorgraph and renderer behaviour. Domain
 objects describe revisions and publication, not DXF entities or DOM state.
 The retained deterministic algorithms and fixtures remain in their current
 packages until a justified change; this option does not require a geometry rewrite.
@@ -764,7 +765,7 @@ packages until a justified change; this option does not require a geometry rewri
 Blob adapters use provider-specific conditional operations behind an opaque
 token contract. PostgreSQL metadata and object bytes do not share a transaction.
 Stage an upload, verify recovery copies, record durability/publication, then
-update a Plans-owned asset pointer with concurrency control. Workplace owns
+update a Floorplans-owned asset pointer with concurrency control. Workplace owns
 geometry-to-stable-space mappings through its mapping domain and publication
 command; Booking validates dated-inventory and commitment impact before
 activation. One admin workflow may approve then activate, exposing each actual
@@ -831,7 +832,7 @@ alert and require explicit operator choice for failover outside that budget.
 ### Composition root
 
 `app/contexts.go` constructs Identity once with distinct People/Access/Delegation
-interfaces, then Workplace/Policy/Plans and Booking with its private solver.
+interfaces, then Workplace/Policy/Floorplans and Booking with its private solver.
 Events receives Booking's venue participant and Visitors' visit interface.
 Exchange receives Booking's room interface and owns provider reconciliation;
 Identity's native-authority adapter independently verifies delegation evidence.
@@ -848,7 +849,7 @@ unrestricted database handle inside every command.
 ```text
 spaceweave/
 ├── api/src/app/
-│   ├── identity/                            workplace/ policy/ booking/ exchange/ plans/
+│   ├── identity/                            workplace/ policy/ booking/ exchange/ floorplans/
 │   └── visitors/                            events/ attendance/ notifications/
 ├── api/src/provisioning/                    SCIM Users/Groups wire contract and Entra profile
 ├── api/
@@ -917,7 +918,7 @@ separately configured reporting retention. A report or delayed projection never
 authorises release. Personal check-in remains the only transition to taken;
 anonymous occupancy cannot prevent a no-show returning to the pool.
 
-Plans approval identifies an immutable, durable asset. Workplace owns publication
+Floorplans approval identifies an immutable, durable asset. Workplace owns publication
 of geometry-to-stable-space mappings; Booking validates dated inventory and
 confirmed-claim impact before operational activation. A combined administrator
 workflow may complete both steps, but reports approval separately when activation
@@ -1083,20 +1084,20 @@ provider integrations are new work, not moves of existing implementations.
 | Today's path | Proposed destination or treatment | Reason |
 | --- | --- | --- |
 | `cmd/spaceweave` | Retain; delegate to `internal/app`. | Keep the existing executable and CLI semantics. |
-| `internal/cli` | Retain during adoption; composition belongs in `app`. | Cobra owns flags/commands, not context construction rules. |
-| `internal/config` | Retain initially, then technical `shared/config` if useful. | Deployment YAML is distinct from Policy's runtime records. |
-| `internal/server/server.go` | `shared/httpkit`, `app/routes.go` and `plans/adapters/http`. | Separate HTTP assembly from existing plan operations. |
-| `internal/server/profiles.go` | `plans/adapters/http` plus Plans application. | Layer-profile operations remain part of floor-plan review. |
-| `internal/server/files.go` | Plans multipart attachment/detach HTTP adapter and application operations. | Preserve attachment validation; generated-directory static serving is in `server.go`. |
-| `internal/catalog` | Legacy adapter during transition; durable metadata in `plans/adapters/postgres`. | Local catalogue locks/renames do not establish distributed booking correctness. |
-| `internal/inbox` | Plans upload/intake adapter. | Intake stages work, not authoritative booking capacity. |
-| `internal/worker` | Plans application/tracing adapter plus shared durable execution. | Keep trace behaviour; replace local queue assumptions for replicas. |
-| `internal/autotrace` including profiles/evaluation | Retain behind Plans tracing adapter. | Existing deterministic algorithms and quality fixtures remain valuable. |
-| `internal/cad`, `internal/dwg`, `internal/dxf` | Retain geometry/readers. | Context organisation does not require rewriting format readers. |
-| `internal/convert`, `internal/raster`, `internal/svgdraw`, `internal/vector` | Retain rendering/conversion packages behind Plans. | Their actual variation is technical format/geometry behaviour. |
-| `internal/floorgraph`, `internal/plan`, `internal/trace` | Retain behind Plans while separating revision metadata from geometry. | Do not turn a traced room polygon into an authoritative Booking entity. |
-| `internal/fakeclaude` | Retain existing test support for the optional tracer. | No new cloud/provider assumption for deterministic tracing. |
-| `internal/buildinfo` | Retain or technical shared location. | Build metadata has no domain owner. |
+| `internal/app/cli` | Retain during adoption; composition belongs in `app`. | Cobra owns flags/commands, not context construction rules. |
+| `internal/app/config` | Retain initially, then technical `shared/config` if useful. | Deployment YAML is distinct from Policy's runtime records. |
+| `internal/floorplans/adapters/http/server.go` | `shared/httpkit`, `app/routes.go` and `floorplans/adapters/http`. | Separate HTTP assembly from existing plan operations. |
+| `internal/floorplans/adapters/http/profiles.go` | `floorplans/adapters/http` plus Floorplans application. | Layer-profile operations remain part of floor-plan review. |
+| `internal/floorplans/adapters/http/files.go` | Floorplans multipart attachment/detach HTTP adapter and application operations. | Preserve attachment validation; generated-directory static serving is in `server.go`. |
+| `internal/floorplans/adapters/localimport/catalog` | Legacy adapter during transition; durable metadata in `floorplans/adapters/postgres`. | Local catalogue locks/renames do not establish distributed booking correctness. |
+| `internal/floorplans/adapters/inbox` | Floorplans upload/intake adapter. | Intake stages work, not authoritative booking capacity. |
+| `internal/floorplans/adapters/jobs` | Floorplans application/tracing adapter plus shared durable execution. | Keep trace behaviour; replace local queue assumptions for replicas. |
+| `internal/floorplans/processing/autotrace` including profiles/evaluation | Retain behind Floorplans tracing adapter. | Existing deterministic algorithms and quality fixtures remain valuable. |
+| `internal/floorplans/processing/cad`, `internal/floorplans/processing/dwg`, `internal/floorplans/processing/dxf` | Retain geometry/readers. | Context organisation does not require rewriting format readers. |
+| `internal/floorplans/processing/convert`, `internal/floorplans/processing/raster`, `internal/floorplans/processing/svgdraw`, `internal/floorplans/processing/vector` | Retain rendering/conversion packages behind Floorplans. | Their actual variation is technical format/geometry behaviour. |
+| `internal/floorplans/processing/floorgraph`, `internal/floorplans/processing/plan`, `internal/floorplans/processing/trace` | Retain behind Floorplans while separating revision metadata from geometry. | Do not turn a traced room polygon into an authoritative Booking entity. |
+| `internal/floorplans/adapters/fakeclaude` | Retain existing test support for the optional tracer. | No new cloud/provider assumption for deterministic tracing. |
+| `internal/platform/buildinfo` | Retain or technical shared location. | Build metadata has no domain owner. |
 | `web/floorplan-iso` | Retain; add lifecycle adapter from `web/shared/renderer`. | React adopts the renderer incrementally. |
 | `test/acceptance` | Retain and extend with full application assembly. | Preserve existing regression evidence. |
 | `pkg/README.md` | Retain the deliberate public/private convention. | Publish deliberate consumer contracts while keeping domain internals private. |
@@ -1191,10 +1192,10 @@ contention, provider and whole-system recovery trials are required.
 [teams]: https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/send-proactive-messages
 [probes]: https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
 [conventions]: ../../../CLAUDE.md
-[server]: ../../../internal/server/server.go
-[catalogue]: ../../../internal/catalog/catalog.go
-[worker]: ../../../internal/worker/worker.go
-[autotrace]: ../../../internal/autotrace/autotrace.go
+[server]: ../../../internal/floorplans/adapters/http/server.go
+[catalogue]: ../../../internal/floorplans/adapters/localimport/catalog/catalog.go
+[worker]: ../../../internal/floorplans/adapters/jobs/worker.go
+[autotrace]: ../../../internal/floorplans/processing/autotrace/autotrace.go
 [glossary]: ../../../GLOSSARY.md
 [defaults]: ../../policy-defaults.md
 [architecture]: ../../architecture.md

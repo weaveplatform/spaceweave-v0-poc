@@ -1,7 +1,8 @@
 # Option 3: Clean architecture
 
-The repository-architecture decision is pending. This candidate expresses the
-same agreed logical owners as the other four: combined Identity; attendance
+This is a comparison alternative. [Option 5](5-modular-monolith.md) is selected
+by [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md). This candidate
+expresses the same agreed logical owners as the other four: combined Identity; attendance
 planning and claim commitment inside Booking; separate Exchange and Events.
 Its package organisation and dependency rules remain specific to this style.
 [Identity](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
@@ -135,9 +136,9 @@ spaceweave/
 
 `api/`, production portals, PostgreSQL adapters and Kubernetes manifests are new
 work. Their appearance here is not a claim that they exist. Today's
-[server](../../../internal/server/server.go),
-[catalogue](../../../internal/catalog/catalog.go) and
-[worker](../../../internal/worker/worker.go) implement a drawing microsite using
+[server](../../../internal/floorplans/adapters/http/server.go),
+[catalogue](../../../internal/floorplans/adapters/localimport/catalog/catalog.go) and
+[worker](../../../internal/floorplans/adapters/jobs/worker.go) implement a drawing microsite using
 local files and polling, not the future distributed booking application.
 
 ## Full package tree
@@ -1167,9 +1168,9 @@ documented application permission on chat-message creation is for migration.
 Today's deterministic CAD/raster pipeline is valuable implementation, not a new
 booking domain. Preserve its algorithms and fixtures while separating business
 revision workflow from local filesystem orchestration. Current
-[conversion](../../../internal/convert/convert.go),
-[trace types](../../../internal/plan/trace.go) and
-[worker publishing](../../../internal/worker/worker.go) show those mixed concerns.
+[conversion](../../../internal/floorplans/processing/convert/convert.go),
+[trace types](../../../internal/floorplans/processing/plan/trace.go) and
+[worker publishing](../../../internal/floorplans/adapters/jobs/worker.go) show those mixed concerns.
 
 ```text
 upload source package -> verify immutable source/recovery objects -> metadata/job
@@ -1429,7 +1430,7 @@ separately configured reporting retention. A report or delayed projection never
 authorises release. Personal check-in remains the only transition to taken;
 anonymous occupancy cannot prevent a no-show returning to the pool.
 
-Plans approval identifies an immutable, durable asset. Workplace owns publication
+Floorplans approval identifies an immutable, durable asset. Workplace owns publication
 of geometry-to-stable-space mappings; Booking validates dated inventory and
 confirmed-claim impact before operational activation. A combined administrator
 workflow may complete both steps, but reports approval separately when activation
@@ -1611,27 +1612,27 @@ preserve. Booking, identity and provider integrations require new behaviour.
 | Current path | Candidate destination | Split or preservation |
 | --- | --- | --- |
 | `cmd/spaceweave/main.go` | same entrypoint -> `app`/adapter CLI | retain one executable; introduce explicit production roles |
-| `internal/cli` | `adapter/cli`, `app`, infrastructure process | Cobra commands/presenters versus construction/listen/drain |
-| `internal/config` | `infrastructure/config` | strict YAML/flag precedence; operational policy moves to DB |
-| `internal/buildinfo` | `infrastructure/buildinfo` | retain version metadata |
-| `internal/server/server.go` | infrastructure router + adapter HTTP controller | Chi mounts/lifecycle separate from upload/review orchestration |
-| `internal/server/files.go` | drawing attachment controller/upload operations | Preserve multipart attachment/detach validation; static generated-directory serving comes from `server.go`, not this file. |
-| `internal/server/profiles.go` | admin drawing controller + processing ports | preserve editable profile workflow; revision its effective input |
-| `internal/catalog/catalog.go` | drawing entity, drawing repositories and queue | state machine separates from local lock/file catalogue |
-| `internal/catalog/package.go` | drawingupload + revision metadata | preserve architecture/space-plan/reference package roles |
-| `internal/inbox` | `adapter/gateway/inbox` | optional local development ingestion, not production durable queue |
-| `internal/worker` | drawingprocess + jobrunner + blob publication | split workflow, lease runner and artifact persistence |
-| `internal/convert` | gateway conversion | sniffing/conversion stays outside pure entities |
-| `internal/autotrace` | drawingengine autotrace | retain deterministic algorithm and golden tests |
-| `internal/autotrace/cadfront`, `rasterfront` | corresponding engine packages | preserve CAD/raster frontends and quality fixtures |
-| `internal/autotrace/profile`, `score`, `synth` | corresponding engine packages | library I/O stays adapter; profile versions enter processing input |
-| `internal/floorgraph` | drawingengine floorgraph | retain graph/topology algorithms and regression corpus |
-| `internal/cad`, `dxf`, `dwg` | corresponding engine packages | preserve parsers, limits and real-file tests |
-| `internal/dxf/dxftest`, `dwg/dwgtest` | corresponding engine fixture packages | keep test-data construction local to engine families |
-| `internal/raster`, `svgdraw`, `vector` | corresponding engine packages | no automatic rewrite as booking entities |
-| `internal/plan` | engine plan + entity drawing + validator gateway | geometry/trace format, revision rules and Node execution split |
-| `internal/trace` | gateway Claude + drawingprocess | SDK/tool loop separate from durable revision orchestration |
-| `internal/fakeclaude` | test fixture for Claude gateway | retain controlled provider behaviour; absent from production roles |
+| `internal/app/cli` | `adapter/cli`, `app`, infrastructure process | Cobra commands/presenters versus construction/listen/drain |
+| `internal/app/config` | `infrastructure/config` | strict YAML/flag precedence; operational policy moves to DB |
+| `internal/platform/buildinfo` | `infrastructure/buildinfo` | retain version metadata |
+| `internal/floorplans/adapters/http/server.go` | infrastructure router + adapter HTTP controller | Chi mounts/lifecycle separate from upload/review orchestration |
+| `internal/floorplans/adapters/http/files.go` | drawing attachment controller/upload operations | Preserve multipart attachment/detach validation; static generated-directory serving comes from `server.go`, not this file. |
+| `internal/floorplans/adapters/http/profiles.go` | admin drawing controller + processing ports | preserve editable profile workflow; revision its effective input |
+| `internal/floorplans/adapters/localimport/catalog/catalog.go` | drawing entity, drawing repositories and queue | state machine separates from local lock/file catalogue |
+| `internal/floorplans/adapters/localimport/catalog/package.go` | drawingupload + revision metadata | preserve architecture/space-plan/reference package roles |
+| `internal/floorplans/adapters/inbox` | `adapter/gateway/inbox` | optional local development ingestion, not production durable queue |
+| `internal/floorplans/adapters/jobs` | drawingprocess + jobrunner + blob publication | split workflow, lease runner and artifact persistence |
+| `internal/floorplans/processing/convert` | gateway conversion | sniffing/conversion stays outside pure entities |
+| `internal/floorplans/processing/autotrace` | drawingengine autotrace | retain deterministic algorithm and golden tests |
+| `internal/floorplans/processing/autotrace/cadfront`, `rasterfront` | corresponding engine packages | preserve CAD/raster frontends and quality fixtures |
+| `internal/floorplans/processing/autotrace/profile`, `score`, `synth` | corresponding engine packages | library I/O stays adapter; profile versions enter processing input |
+| `internal/floorplans/processing/floorgraph` | drawingengine floorgraph | retain graph/topology algorithms and regression corpus |
+| `internal/floorplans/processing/cad`, `dxf`, `dwg` | corresponding engine packages | preserve parsers, limits and real-file tests |
+| `internal/floorplans/processing/dxf/dxftest`, `dwg/dwgtest` | corresponding engine fixture packages | keep test-data construction local to engine families |
+| `internal/floorplans/processing/raster`, `svgdraw`, `vector` | corresponding engine packages | no automatic rewrite as booking entities |
+| `internal/floorplans/processing/plan` | engine plan + entity drawing + validator gateway | geometry/trace format, revision rules and Node execution split |
+| `internal/floorplans/processing/trace` | gateway Claude + drawingprocess | SDK/tool loop separate from durable revision orchestration |
+| `internal/floorplans/adapters/fakeclaude` | test fixture for Claude gateway | retain controlled provider behaviour; absent from production roles |
 | `web/floorplan-iso/js` | shared renderer + React bridge/workbench | keep tested D3 geometry/rendering; migrate workflow UI separately |
 | `web/floorplan-iso/tools/validate.mjs` | validator gateway tool | retain schema/geometry validation contract |
 | `test/acceptance` | existing tracing acceptance plus booking suites | keep real dependency testing; add PostgreSQL/provider contracts |

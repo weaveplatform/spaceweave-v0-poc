@@ -1,7 +1,9 @@
 # Option 5: Modular monolith
 
-The repository-architecture decision is pending. This candidate expresses the
-same agreed logical owners as the other four: combined Identity; attendance
+This is the selected repository architecture; [ADR 0009](../../adr/0009-use-a-domain-first-modular-monolith.md)
+records its acceptance. The current code implements the Floorplans module and
+application assembly; the full-capability tree below remains a target design.
+This option shares the agreed logical owners with the other four: combined Identity; attendance
 planning and claim commitment inside Booking; separate Exchange and Events.
 Its package organisation and dependency rules remain specific to this style.
 [Identity](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
@@ -43,7 +45,7 @@ pooled parking and event venues; tickets are free and named.
 
 The agreed logical boundaries apply to every architecture candidate. This option
 encapsulates them as modules with inner ports/adapters where useful; the overall
-repository-architecture choice remains pending. Compare the
+repository architecture is selected as Option 5. Compare the
 [Identity decision](../../adr/0026-combine-workforce-identity-and-access-ownership.md),
 [Booking planning decision](../../adr/0027-keep-attendance-planning-inside-booking.md),
 [Exchange decision](../../adr/0028-separate-exchange-synchronisation-from-booking.md)
@@ -91,7 +93,7 @@ Compared with [uniform-layer DDD](4-ddd.md), the primary review unit here is a
 module's published contract and owned tables; a small module need not introduce
 repositories, aggregates and domain services. Compared with the
 [single-core hexagonal option](2-hexagonal.md), there is no application-wide
-business core or global collection of ports: Booking and Plans have separate
+business core or global collection of ports: Booking and Floorplans have separate
 internal hexagons, while Policy stays small. All options retain one release and
 the same deployment roles; none implies microservices.
 
@@ -114,13 +116,14 @@ spaceweave/
 └── .testcoverage.yml        existing total/package coverage thresholds
 ```
 
-The existing repository is a tracing application, not an implemented booking
-platform. [CLI](../../../internal/cli/cli.go),
-[Chi server](../../../internal/server/server.go),
-[catalogue](../../../internal/catalog/catalog.go) and
-[worker](../../../internal/worker/worker.go) already provide useful behaviour.
-The proposed tree moves that behaviour into Plans and app without inventing
-existing identity, booking or PostgreSQL packages. Existing local-file catalogue
+The existing repository implements the Floorplans module, not the wider booking
+platform. [CLI](../../../internal/app/cli/cli.go),
+[Chi server](../../../internal/floorplans/adapters/http/server.go),
+[catalogue](../../../internal/floorplans/adapters/localimport/catalog/catalog.go) and
+[worker](../../../internal/floorplans/adapters/jobs/worker.go) already provide useful behaviour.
+The current code places that behaviour under Floorplans and app without inventing
+identity, booking or PostgreSQL implementations. The full tree below includes
+future capabilities and persistence work. Existing local-file catalogue
 locking is not the distributed booking design.
 
 The renderer currently uses native JavaScript modules and D3 with no build step,
@@ -140,7 +143,7 @@ frontend folders and parent directories without Go files do not. Unlisted unit
 tests and generated expansion are not included in the totals.
 
 Ten owners are represented: Identity, Workplace, Booking, Events, Exchange,
-Visitors, Plans, Notifications, Attendance and Policy. Combined Identity,
+Visitors, Floorplans, Notifications, Attendance and Policy. Combined Identity,
 planning inside Booking, separate Exchange, and the Events boundary are agreed.
 The candidate preserves these owners using module APIs; the other four options
 express the same ownership through their own layers, ports, rings or contexts.
@@ -410,7 +413,7 @@ spaceweave/
 │   │       ├── store.go
 │   │       └── migrations/
 │   │           └── 0001_visitors.sql
-│   ├── plans/
+│   ├── floorplans/
 │   │   ├── module.go
 │   │   ├── api/
 │   │   │   └── revisions.go
@@ -611,7 +614,7 @@ spaceweave/
 
 The processing directories retain their existing subsidiary files and tests as
 they migrate; the representative entry per package shows the intended owner.
-The current `dwg/dwgtest` helper would remain under Plans too, although it is not
+The current `dwg/dwgtest` helper would remain under Floorplans too, although it is not
 expanded in this representative tree. Likewise, the printed generated files
 stand for generator outputs, not handwritten domain models.
 
@@ -691,7 +694,7 @@ resources it owns; a shared PostgreSQL pool belongs to app.
 | `events/api.Events` and `Tickets` | Publish/edit event details, audience and registration; coordinate venue changes; issue/revoke tickets and admit attendees using Events-owned state. |
 | `booking/api.Planning` | Manage attendance dates, travel exceptions, cycles, groups, proposals and run status. |
 | `visitors/api.TicketVisits` | Ensure a verified restricted visit for a ticket operation; participates only in the named issuance transaction. |
-| `plans/api.Revisions` | Upload, process, review, publish and retrieve immutable revision metadata and authorised asset access. |
+| `floorplans/api.Revisions` | Upload, process, review, publish and retrieve immutable revision metadata and authorised asset access. |
 | `notifications/api.Notifications` | Read in-app messages and update message-specific delivery preferences. |
 | `attendance/api.Reports` | Read provenance-labelled attendance and occupancy reports under configured scope/retention. |
 | `policy/api.Policies` | Read effective immutable policy versions; validate and publish permitted office overrides. |
@@ -820,7 +823,7 @@ migrations install their own tables, indexes and constraints.
 | Events | `events`, `event_audiences`, `tickets`, `admissions`, `handover_reviews` | Event lifecycle, handover, registration, ticket capacity and admission, coordinated with Booking's venue state. |
 | Exchange | `exchange_links`, `provider_observations`, `provider_desired_state`, `sync_cursors`, `subscriptions`, `reconciliation_progress`, `room_policy_snapshots`, `native_checkin_claims` | Provider policy/claim observations, correspondence and reconciliation; apply local claim transitions through Booking. Native claim reads require supported user context. |
 | Visitors | `visitors`, `email_proofs`, `visits`, `visit_restrictions`, `reception_entries` | Verified email, hosts, access windows and visitor-specific retention. |
-| Plans | `uploads`, `plan_revisions`, `render_revisions`, `asset_copies`, `publication_pointers`, `processing_attempts` | Metadata and publication; blob objects remain outside PostgreSQL transactions. |
+| Floorplans | `uploads`, `plan_revisions`, `render_revisions`, `asset_copies`, `publication_pointers`, `processing_attempts` | Metadata and publication; blob objects remain outside PostgreSQL transactions. |
 | Notifications | `preferences`, `messages`, `delivery_attempts`, `teams_installations` | Recipient-specific delivery and suppression; no change to booking success. |
 | Attendance | `evidence_projection`, `daily_reports`, `projection_checkpoints`, `retention_runs` | Derived evidence with provenance; no write-back to claim truth. |
 | Policy | `policy_versions`, `office_overrides`, `publication_audit` | Runtime policy publication, distinct from strict YAML deployment settings. |
@@ -1107,18 +1110,18 @@ silently move every confirmation to the new usual office. Notification tasks
 explain existing arrangements needing review. App-managed and Exchange-derived
 delegation grants retain separate source and revocation lifecycles.
 
-### Plans, blob recovery and the existing processing pipeline
+### Floorplans, blob recovery and the existing processing pipeline
 
-Plans owns the full drawing-to-approved-revision lifecycle. Its processing
+Floorplans owns the full drawing-to-approved-revision lifecycle. Its processing
 packages retain the existing CAD, vector, raster, floorgraph, automatic tracing
 and optional agent tracing algorithms. `localimport` is an explicit migration
 adapter for existing `catalog.json` packages, not the production source of
 distributed job ownership. Scratch directories are per attempt and disposable.
-The local [conversion path](../../../internal/convert/convert.go) and
-[worker publication path](../../../internal/worker/worker.go) supply behaviour
+The local [conversion path](../../../internal/floorplans/processing/convert/convert.go) and
+[worker publication path](../../../internal/floorplans/adapters/jobs/worker.go) supply behaviour
 to preserve, including reports, review feedback and draft status.
 
-The blob port and Azure/GCS adapters stay inside Plans because Plans is the
+The blob port and Azure/GCS adapters stay inside Floorplans because Floorplans is the
 only business owner of drawing/render assets. A later second independent asset
 owner could justify extracting a neutral byte-store mechanism; it would not
 justify sharing revision publication rules. Deployment configuration chooses
@@ -1211,7 +1214,7 @@ tenant installation approval does not count as individual message opt-in.
 ### Composition, generated transport and React portals
 
 App constructs platform mechanisms, Policy, Identity, Workplace, Visitors,
-Plans, Booking, Events, Exchange, Notifications and Attendance, then registers
+Floorplans, Booking, Events, Exchange, Notifications and Attendance, then registers
 subscriptions and gateways. Construction order follows injected dependencies;
 event subscription registration follows construction, so consumers do not call
 half-built modules. Events receives Booking's narrow venue participant and
@@ -1377,7 +1380,7 @@ separately configured reporting retention. A report or delayed projection never
 authorises release. Personal check-in remains the only transition to taken;
 anonymous occupancy cannot prevent a no-show returning to the pool.
 
-Plans approval identifies an immutable, durable asset. Workplace owns publication
+Floorplans approval identifies an immutable, durable asset. Workplace owns publication
 of geometry-to-stable-space mappings; Booking validates dated inventory and
 confirmed-claim impact before operational activation. A combined administrator
 workflow may complete both steps, but reports approval separately when activation
@@ -1679,39 +1682,35 @@ The change is local to Notifications, app wiring/configuration, deployment
 identity and adapter/assembly tests. It does not require a Teams port in every
 module, a new business module or a second booking write path.
 
-## Package mapping
+## Current implementation and remaining migration
 
-Current paths are evidence of existing tracing behaviour; proposed paths are
-placements to review. New business modules have no current implementation to
-move. Preserve algorithm tests and golden fixtures during any later migration.
+The existing tool now follows this option with the module name **Floorplans**
+and namespace `internal/floorplans`. These are implemented paths, not the full
+booking platform shown in the representative target tree above.
 
-| Current path or responsibility | Proposed owner/location | Migration implication |
+| Current path | Implemented responsibility | Future work |
 | --- | --- | --- |
-| `cmd/spaceweave/main.go` | Same entrypoint, delegates to `internal/app/cli` | One image supports named runtime roles and existing CLI operations. |
-| `internal/cli` | `internal/app/cli` plus module APIs | Remove direct catalogue/provider construction; preserve flags/exit behaviour. |
-| `internal/config` | `internal/app/config` | Strict deployment YAML; runtime policy becomes Policy records. |
-| `internal/buildinfo` | `internal/platform/buildinfo` | Neutral build information, no business dependency. |
-| `internal/server/server.go` | `plans/adapters/http`, `gateway/portal`, `app/router` | Split plan operations, static hosting and assembly; replace local-only security assumptions deliberately. |
-| `internal/server/profiles.go` | Plans HTTP and processing profile ownership | Existing layer-profile behaviour remains with Plans, scoped by office/admin capability. |
-| `internal/server/files.go` | Plans multipart attachment/detach transport and upload workflow | Preserve attachment validation; static asset mounts originate in `server.go`. |
-| `internal/catalog` | Plans metadata/core and PostgreSQL adapter; `localimport` for old packages | Catalogue entities/review behaviour survive; file locks do not become HA leases. |
-| `internal/worker` | Plans processing job adapter and core publication | PostgreSQL attempts/leases replace polling catalogue claims; scratch remains disposable. |
-| `internal/inbox` | Plans upload/import edge, composed by CLI | Local watch workflow is explicit tooling, not production distributed ingress. |
-| `internal/convert`, `cad`, `dwg`, `dxf`, `svgdraw`, `vector`, `raster` | `plans/processing/<same-name>` | Preserve format, scale, rendering and validation behaviour and tests. |
-| `internal/plan`, `floorgraph` | `plans/processing/plan`, `floorgraph` | Keep plan document/schema concerns distinct from bookable-space inventory. |
-| `internal/autotrace`, `profile`, `score` | Plans processing subpackages | Tracer algorithm and profile/score tests move with their owner. |
-| `internal/trace`, `fakeclaude` | Plans trace processing and adapter test support | Optional external model use remains behind tracing role/configuration. |
-| `web/floorplan-iso` | Retained renderer plus `web/shared/FloorPlan.tsx` | React owns a wrapper; renderer owns its DOM subtree; retain JS tests. |
-| Existing tracing CLI/server/catalogue tests | Beside moved packages and new Plans assembly suites | Move incrementally with behaviour; do not rewrite merely to match directories. |
-| Staff access, source provisioning, scope/delegation | New Identity | No existing complete auth package is claimed. |
-| Location definitions, dates, resource claims, allocation, visits/events | New Workplace, Booking, Exchange, Events and Visitors | Events owns registration/tickets/admission; Booking retains venue claims and joins the narrow venue transaction. |
-| Delivery, attendance, runtime policy | New Notifications, Attendance and Policy | Distinct state/retention owners; neither reports nor notifications become command truth. |
-| PostgreSQL jobs/outbox, cloud blobs, Kubernetes roles | New platform/Plans adapters/deploy | Existing local files and goroutines do not supply these guarantees. |
+| `cmd/spaceweave/main.go` | Thin executable delegates to `internal/app/cli`. | Additional runtime roles when their behaviour exists. |
+| `internal/app/cli` and `internal/app/config` | Existing commands, flags, exit behaviour and strict deployment settings. | Staff/admin commands are separate capability work. |
+| `internal/app/router.go` | Composes module HTTP routes with the portal gateway. | Mount future public/versioned contracts deliberately. |
+| `internal/platform/buildinfo` | Neutral release metadata. | Other shared facilities only as required. |
+| `internal/floorplans/module.go` | Constructs local storage, processing workers and inbox watcher; publishes review operations. | Durable production runtime and adapters. |
+| `internal/floorplans/api` | Published DTOs, typed outcomes and `Service` operations. | Revisioned asset contracts and other future operations. |
+| `internal/floorplans/core` | Transition/review rules independent of HTTP and storage. | Revision publication, recovery and retention policies. |
+| `internal/floorplans/processing` | Existing convert, CAD/DXF/DWG/SVG, vector/raster, graph, plan and tracing packages, with fixtures. | Preserve algorithms while evolving the revision lifecycle. |
+| `internal/floorplans/adapters/http` | Existing upload/review, multipart attachments and profiles through the module interface. | Production identity and office-scoped access. |
+| `internal/floorplans/adapters/localimport/catalog` | Existing `catalog.json`, local files, locking and compatibility with stored packages. | PostgreSQL metadata and explicit import of existing packages. |
+| `internal/floorplans/adapters/jobs` and `adapters/inbox` | Existing local polling/recovery, trace processing and optional watched input. | PostgreSQL attempts/leases and distributed ingress. |
+| `internal/floorplans/adapters/fakeclaude` | Optional tracer's test provider. | No production provider is implied. |
+| `internal/gateway/portal` | Static assets, generated output, host restrictions and cache policy. | Separate portal entrypoints and production access policy. |
+| `internal/layout` | Import/dependency checks for the implemented roots. | SQL/migration/transaction ownership checks when those facilities exist. |
+| `web/floorplan-iso` and `test/acceptance` | Existing renderer, browser/file contracts and end-to-end regression coverage. | React lifecycle wrapper and new business acceptance suites. |
 
-The existing [code map](../../architecture.md#existing-application) and
-[module declaration](../../../go.mod) support the current-state column.
-The tree is a target placement map rather than a claim that every source file
-has already been migrated or that Go package moves are behaviour-neutral.
+Identity, Workplace, Booking, Exchange, Events, Visitors, Notifications,
+Attendance and Policy are not implemented by this refactor. PostgreSQL jobs/outbox,
+Azure/GCP assets and Kubernetes roles remain new work. Local file locks and
+in-process goroutines do not establish those guarantees. [Current application](../../architecture.md#existing-application)
+and [surface inventory](../api-surfaces/current-surfaces.md) describe the retained behaviour.
 
 ## Numbers
 
@@ -1733,12 +1732,12 @@ unit tests are excluded. Root overview and prose examples are not counted.
 | Packages under Booking | 19 |
 | Packages under Events | 6 |
 | Packages under Exchange | 8 |
-| Packages under Plans | 25 |
+| Packages under Floorplans | 25 |
 | Cross-module write transaction exceptions | 2, `EventVenueChange` and `VisitTicketIssuance` |
 | Cross-module foreign keys proposed initially | 1, nullable ticket-to-visit link, restrictive deletion |
 
 These structural counts describe the representative proposal, not lines of
-code, development effort or production performance. Plans has many packages
+code, development effort or production performance. Floorplans has many packages
 because existing processing already does; Booking has many because consistency
 and operation-specific complexity justify them.
 
@@ -1791,7 +1790,7 @@ tradeoffs that matter when selecting this candidate.
   enlist owned stores without giving callers SQL access. Their transaction
   semantics and failure behaviour require assembly tests and documented lock
   order; "only published APIs" does not by itself establish correctness.
-- **Asset approval and operational publication have distinct owners.** Plans
+- **Asset approval and operational publication have distinct owners.** Floorplans
   approves immutable assets; Workplace owns active geometry mappings and baseline
   changes as versioned inputs. Booking validates impact and owns dated applicability and
   temporary moves of unallocated desks within a building. A new definition
@@ -1812,10 +1811,10 @@ tradeoffs that matter when selecting this candidate.
   explicit. It also creates schema coupling. Adding more such keys requires
   their own lifecycle case; blanket freedom would quietly recreate one shared
   data model.
-- **Blob storage stays inside Plans initially.** Revision ownership is clear
+- **Blob storage stays inside Floorplans initially.** Revision ownership is clear
   and provider types stay behind a single port. Extraction to platform is
   justified only by another independent asset owner, while publication and
-  verified recovery policy remain Plans behaviour. Azure/GCP portability does
+  verified recovery policy remain Floorplans behaviour. Azure/GCP portability does
   not make recovery semantics identical.
 - **Events and jobs make operations more demanding.** Receipts, pending effects,
   freshness, retention, replay and lease recovery need tooling from the first

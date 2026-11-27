@@ -50,7 +50,7 @@ export function pointInPolygon([x, y], poly) {
 // or ends, so each polygon is a row of trapezoids and the overlap's width is
 // piecewise linear in y, integrated exactly. That keeps rooms which only
 // share a wall line at an overlap of 0 (± rounding), where a point-sampled or
-// area-sum test can't tell touching from overlapping. internal/floorgraph's
+// area-sum test can't tell touching from overlapping. internal/floorplans/processing/floorgraph's
 // overlapArea is the same algorithm in Go; keep them in step.
 export function overlapArea(a, b) {
   const box = (p) => {

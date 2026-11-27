@@ -3,7 +3,7 @@
 # Unknown keys are an error. Precedence: flag > SPACEWEAVE_* environment > file.
 #
 # There is no API key setting: the Anthropic SDK reads ANTHROPIC_API_KEY or an
-# `ant auth login` profile. Images dropped in the inbox are sent to the Claude API.
+# `ant auth login` profile. Only tracer: claude sends images to the Claude API.
 
 inbox: floorplans/inbox                         # SPACEWEAVE_INBOX, --inbox
 output: web/floorplan-iso/generated             # SPACEWEAVE_OUTPUT, --output; must be the site's generated/ folder
