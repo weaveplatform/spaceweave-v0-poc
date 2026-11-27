@@ -165,7 +165,7 @@ func TestUnitBundleErrors(t *testing.T) {
 			"duplicate component",
 			map[string]string{"paths-layer-profiles.yaml": "components:\n  schemas:\n    Floorplan: {type: string}\n"},
 			ErrDuplicateComp,
-			[]string{"paths-floorplan.yaml", "schemas/Floorplan", "paths-layer-profiles.yaml"},
+			[]string{"paths-floorplans.yaml", "schemas/Floorplan", "paths-layer-profiles.yaml"},
 		},
 		{"paths not a mapping", map[string]string{"paths-layer-profiles.yaml": "paths: []\n"}, ErrNotMapping, []string{"paths-layer-profiles.yaml"}},
 		{
@@ -224,10 +224,10 @@ func TestUnitBundleUnreadable(t *testing.T) {
 		t.Errorf("an empty fragment is allowed: %v", err)
 	}
 	noComponents := copyFixture(t, map[string]string{
-		InfoFile:                 "openapi: 3.0.3\ninfo: {title: t, version: '1'}\n",
-		"components-common.yaml": "",
-		"paths-floorplan.yaml":   "",
-		"paths-floorplans.yaml":  layerProfilesFragment,
+		InfoFile:                    "openapi: 3.0.3\ninfo: {title: t, version: '1'}\n",
+		"components-common.yaml":    "",
+		"paths-layer-profiles.yaml": "",
+		"paths-floorplans.yaml":     layerProfilesFragment,
 	})
 	got, err := Bundle(noComponents)
 	if err != nil {

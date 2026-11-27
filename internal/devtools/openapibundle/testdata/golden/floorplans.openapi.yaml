@@ -41,6 +41,12 @@ paths:
                 $ref: '#/components/schemas/Floorplan'
         "404":
           $ref: '#/components/responses/NotFound'
+  /layer-profiles:
+    get:
+      operationId: listLayerProfiles
+      responses:
+        "200":
+          description: Layer profiles.
 components:
   responses:
     NotFound:
